@@ -9,3 +9,8 @@ A Python Library for Self Organizing Map (SOM)
 4- Hitmap
 3- 1-d or 2-d SOM with only rectangular, planar grid. (worked well in comparison with hexagonal shape, when I was checking in Matlab)
 4- different methods for function approximation and predictions (mostly using Sklearn)
+
+more information about the codes can be found here: http://vahidmoosavi.com/2014/02/18/a-self-organizing-map-som-package-in-python-sompy/
+
+A sample use of codes is available at: http://nbviewer.ipython.org/gist/sevamoo/f1afe78af3cf6b8c4b67
+
