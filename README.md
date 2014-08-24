@@ -14,5 +14,5 @@ As much as possible, the structure of SOM is similar to somtoolbox in Matlab. It
 
 more information about the codes can be found here: http://vahidmoosavi.com/2014/02/18/a-self-organizing-map-som-package-in-python-sompy/
 
-A sample use of codes is available at: http://nbviewer.ipython.org/gist/sevamoo/f1afe78af3cf6b8c4b67
+A sample use of the functions is available at: http://nbviewer.ipython.org/gist/sevamoo/f1afe78af3cf6b8c4b67
 
