@@ -16,3 +16,5 @@ more information about the codes can be found here: http://vahidmoosavi.com/2014
 
 A sample use of the functions is available at: http://nbviewer.ipython.org/gist/sevamoo/f1afe78af3cf6b8c4b67
 
+For more information, you can contact me via sevamoo@gmail.com or svm@arch.ethz.ch
+
