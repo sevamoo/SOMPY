@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 
-# Vahid Moosavi 2014 02 23 9:38 pm
+# Vahid Moosavi 2014 10 23 9:04 pm
 #sevamoo@gmail.com
 #Chair For Computer Aided Architectural Design, ETH  Zurich
 # Future Cities Lab
@@ -28,6 +28,8 @@ from sklearn.decomposition import PCA
 from sklearn import neighbors
 from matplotlib.colors import LogNorm
 from matplotlib import cm
+import matplotlib
+import pandas as pd
 
 
 
@@ -169,17 +171,18 @@ class SOM(object):
     
     ###################################
     #visualize map
-    def view_map(self, what = 'codebook', which_dim = 'all', pack= 'No', text_size = 2.8,save='No', save_dir = 'empty',grid='No',text='Yes'):
+    def view_map(self, what = 'codebook', which_dim = 'all', pack= 'Yes', text_size = 2.8,save='No', save_dir = 'empty',grid='No',text='Yes'):
         
         mapsize = getattr(self, 'mapsize')
         if np.min(mapsize) >1:
         	if pack == 'No':
-        		view_2d(self, text_size, which_dim = which_dim, what = 'codebook')
-        	else: 
-        		view_2d_Pack(self, text_size, which_dim = which_dim,what = 'codebook',save = save, save_dir = save_dir, grid=grid,text=text)
+        		view_2d(self, text_size, which_dim = which_dim, what = what)
+        	else:
+#         		print 'hi' 
+        		view_2d_Pack(self, text_size, which_dim = which_dim,what = what,save = save, save_dir = save_dir, grid=grid,text=text)
         
         elif np.min(mapsize) == 1:
-             view_1d(self, text_size, which_dim = which_dim, what = 'codebook')   
+             view_1d(self, text_size, which_dim = which_dim, what = what)   
 
     ################################################################################
     # Initialize map codebook: Weight vectors of SOM
@@ -338,9 +341,18 @@ class SOM(object):
     	out = np.zeros((bm_ind.shape[0],3))
     	out[:,2] = bm_ind
     	out[:,0] = rows-1-bm_ind/cols
+    	out[:,0] = bm_ind/cols
     	out[:,1] = bm_ind%cols
     	return out.astype(int)
     
+    def cluster(self,method='Kmeans',n_clusters=8):
+    	import sklearn.cluster as clust
+    	km= clust.KMeans(n_clusters=8)
+    	labels = km.fit_predict(denormalize_by(self.data_raw, self.codebook, n_method = 'var'))
+    	setattr(self,'cluster_labels',labels)
+    	return labels
+    
+
     
     
     def hit_map(self,data=None):
@@ -386,13 +398,54 @@ class SOM(object):
     	
     	
     	plt.show()
+    
+    
+    
+    def hit_map_cluster_number(self,data=None):
+    	if hasattr(self, 'cluster_labels'):
+    		codebook = getattr(self, 'cluster_labels')
+    	else:
+    		print 'clustering based on default parameters...'
+    		codebook = self.cluster()
+    	msz =  getattr(self, 'mapsize')
+    	fig = plt.figure(figsize=(msz[1]/2.5,msz[0]/2.5))
+    	ax = fig.add_subplot(111)
+#     	ax.xaxis.set_ticklabels([])
+#     	ax.yaxis.set_ticklabels([])
+#     	ax.grid(True,linestyle='-', linewidth=.5)
+
+    	
+    	if data == None:
+    		data_tr = getattr(self, 'data_raw')
+    		proj = self.project_data(data_tr)
+    		coord = self.ind_to_xy(proj)
+    		cents = self.ind_to_xy(np.arange(0,msz[0]*msz[1]))
+	    	for i, txt in enumerate(codebook):
+		    		ax.annotate(txt, (cents[i,1],cents[i,0]),size=10, va="center")
+    	
+    	if data != None:
+    		proj = self.project_data(data)
+    		coord = self.ind_to_xy(proj)
+    		x = np.arange(.5,msz[1]+.5,1)
+    		y = np.arange(.5,msz[0]+.5,1)
+    		cents = self.ind_to_xy(proj)
+#     		cents[:,1] = cents[:,1]+.2
+    		print cents.shape
+    		label = codebook[proj]
+    		for i, txt in enumerate(label):
+	    		ax.annotate(txt, (cents[i,1],cents[i,0]),size=10, va="center")
+    	
+    	
+    	
+    	plt.imshow(codebook.reshape(msz[0],msz[1])[::],alpha=.5)
+#     	plt.pcolor(codebook.reshape(msz[0],msz[1])[::-1],alpha=.5,cmap='jet')
+    	plt.show()
 
 
     
     
     def predict_Probability(self, data, Target, K =5):
-        # here it is assumed that Target is the last column in the codebook
-        #and data has dim-1 columns
+        # here it is assumed that Target is the last column in the codebook #and data has dim-1 columns
         codebook = getattr(self, 'codebook')
         data_raw = getattr(self,'data_raw')
         dim = codebook.shape[1]
@@ -468,28 +521,6 @@ class SOM(object):
         	
         
         # 
-#         codebook = getattr(self, 'codebook')
-#         data_raw = getattr(self,'data_raw')
-#         dim = codebook.shape[1]
-#         ind = np.arange(0,dim)
-#         X = codebook[:]
-#         Y = codebook[:,Target]
-#         n_neighbors = K
-#         clf = neighbors.KNeighborsRegressor(n_neighbors, weights = wt)
-#         clf.fit(X, Y)
-#         # the codebook values are all normalized
-#         #we can normalize the input data based on mean and std of original data
-#         dimdata = data.shape[1]
-#         if dimdata == dim: 
-#             data[:,Target] == 0   
-#             data = normalize_by(data_raw, data, method='var')
-#             data = data[:,indX]
-#         elif dimdata == dim -1:          
-#             data = normalize_by(data_raw[:,indX], data, method='var')       
-#             #data = normalize(data, method='var')
-#         Predicted_values = clf.predict(data)
-#         Predicted_values = denormalize_by(data_raw[:,Target], Predicted_values)
-#         return Predicted_values
     
     
     def para_bmu_find(self, x, y, njb = 1):
@@ -761,12 +792,13 @@ def view_2d(self, text_size,which_dim='all', what = 'codebook'):
         
         axisNum = 0
         compname = getattr(self, 'compname')
+        norm = matplotlib.colors.normalize(vmin = np.mean(codebook.flatten())-1*np.std(codebook.flatten()), vmax = np.mean(codebook.flatten())+1*np.std(codebook.flatten()), clip = True)
         while axisNum <dim:
             axisNum += 1
             ax = plt.subplot(no_row_in_plot, no_col_in_plot, axisNum)
             ind = int(indtoshow[axisNum-1])
             mp = codebook[:,ind].reshape(msz0, msz1)
-            pl = plt.pcolor(mp[::-1])
+            pl = plt.pcolor(mp[::-1],norm = norm)
 #             pl = plt.imshow(mp[::-1])
             plt.title(compname[0][ind])
             font = {'size'   : text_size*sH/no_col_in_plot}
@@ -824,6 +856,11 @@ def view_2d_Pack(self, text_size,which_dim='all', what = 'codebook',save='No', g
         w= .001
         fig = plt.figure(figsize=(no_col_in_plot*1.5*(1+w),no_row_in_plot*1.5*(1+h)))
 #         print no_row_in_plot, no_col_in_plot
+        norm = matplotlib.colors.Normalize(vmin = np.median(codebook.flatten())-1.5*np.std(codebook.flatten()), vmax = np.median(codebook.flatten())+1.5*np.std(codebook.flatten()), clip = False)
+        
+        DD = pd.Series(data = codebook.flatten()).describe(percentiles=[.03,.05,.1,.25,.3,.4,.5,.6,.7,.8,.9,.95,.97])
+        norm = matplotlib.colors.Normalize(vmin = DD.ix['3%'], vmax = DD.ix['97%'], clip = False)
+
         while axisNum <dim:
             axisNum += 1
             
@@ -834,7 +871,8 @@ def view_2d_Pack(self, text_size,which_dim='all', what = 'codebook',save='No', g
             if grid=='Yes':
             	pl = plt.pcolor(mp[::-1])
             elif grid=='No':
-            	plt.imshow(mp[::-1])
+            	plt.imshow(mp[::-1],norm = None)
+#             	plt.pcolor(mp[::-1])
             	plt.axis('off')
             
             if text=='Yes':
@@ -853,11 +891,41 @@ def view_2d_Pack(self, text_size,which_dim='all', what = 'codebook',save='No', g
 #             plt.colorbar(pl)
 #         plt.tight_layout()
         plt.subplots_adjust(hspace = h,wspace=w)
+    if what == 'cluster':
+    	if hasattr(self, 'cluster_labels'):
+    		codebook = getattr(self, 'cluster_labels')
+    	else:
+    		print 'clustering based on default parameters...'
+    		codebook = self.cluster()
+        h = .2
+        w= .001
+        fig = plt.figure(figsize=(msz0/2,msz1/2))
         
-        	
-#         plt.show()
-        
-        if save == 'Yes':
+        ax = fig.add_subplot(1, 1, 1)
+        mp = codebook[:].reshape(msz0, msz1)
+        if grid=='Yes':
+            pl = plt.pcolor(mp[::-1])
+        elif grid=='No':
+            plt.imshow(mp[::-1])
+#             plt.pcolor(mp[::-1])
+            plt.axis('off')
+            
+        if text=='Yes':
+            plt.title('clusters')
+            font = {'size'   : text_size}
+            plt.rc('font', **font)
+        plt.axis([0, msz0, 0, msz1])
+        ax.set_yticklabels([])
+        ax.set_xticklabels([])
+        ax.xaxis.set_ticks([i for i in range(0,msz1)])
+        ax.yaxis.set_ticks([i for i in range(0,msz0)])
+        ax.xaxis.set_ticklabels([])
+        ax.yaxis.set_ticklabels([])
+        ax.grid(True,linestyle='-', linewidth=0.5,color='k')
+        plt.subplots_adjust(hspace = h,wspace=w)
+
+
+    if save == 'Yes':
         	
         	if save_dir != 'empty':
 #         		print save_dir
@@ -930,7 +998,9 @@ def view_1d(self, text_size, which_dim ='all', what = 'codebook'):
             #plt.colorbar(pl)
         plt.show()    
 
-
+	
+	
+	
 
 
 def lininit(self):
