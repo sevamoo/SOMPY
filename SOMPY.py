@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 
-# Vahid Moosavi 2014 10 23 9:04 pm
+# Vahid Moosavi 2014 11 05 12:58 pm
 #sevamoo@gmail.com
 #Chair For Computer Aided Architectural Design, ETH  Zurich
 # Future Cities Lab
@@ -87,9 +87,9 @@ class SOM(object):
                 else:    
                     self.mapsize = mapsize
             elif len(mapsize) == 1:
-                #s =  int (mapsize[0]/2)
+                s =  int (mapsize[0]/2)
                 self.mapsize = [1 ,mapsize[0]]
-                print 'input was considered as node numbers'
+                print 'input was considered as the numbers of nodes'
                 print 'map size is [{0},{1}]'.format(s,s) 
             self.nnodes = self.mapsize[0]*self.mapsize[1]
                 
@@ -347,7 +347,7 @@ class SOM(object):
     
     def cluster(self,method='Kmeans',n_clusters=8):
     	import sklearn.cluster as clust
-    	km= clust.KMeans(n_clusters=8)
+    	km= clust.KMeans(n_clusters=n_clusters)
     	labels = km.fit_predict(denormalize_by(self.data_raw, self.codebook, n_method = 'var'))
     	setattr(self,'cluster_labels',labels)
     	return labels
@@ -363,6 +363,10 @@ class SOM(object):
     	proj = self.project_data(data_tr)
     	msz =  getattr(self, 'mapsize')
     	coord = self.ind_to_xy(proj)
+    	
+    	#this is not an appropriate way, but it works
+    	coord[:,1] = msz[0]-coord[:,1]
+    	###############################
     	fig = plt.figure(figsize=(msz[1]/2,msz[0]/2))
     	ax = fig.add_subplot(111)
     	ax.xaxis.set_ticks([i for i in range(0,msz[1])])
@@ -404,6 +408,7 @@ class SOM(object):
     def hit_map_cluster_number(self,data=None):
     	if hasattr(self, 'cluster_labels'):
     		codebook = getattr(self, 'cluster_labels')
+    		print 'yesyy'
     	else:
     		print 'clustering based on default parameters...'
     		codebook = self.cluster()
@@ -440,6 +445,7 @@ class SOM(object):
     	plt.imshow(codebook.reshape(msz[0],msz[1])[::],alpha=.5)
 #     	plt.pcolor(codebook.reshape(msz[0],msz[1])[::-1],alpha=.5,cmap='jet')
     	plt.show()
+    	return codebook
 
 
     
@@ -550,7 +556,7 @@ class SOM(object):
         nnodes = getattr(self, 'nnodes')
         dlen = getattr(self ,'dlen')
         dim = getattr(self, 'dim')
-	New_Codebook = np.empty((nnodes, dim))
+        New_Codebook = np.empty((nnodes, dim))
         inds = bmu[0].astype(int)
         row = inds
         col = np.arange(dlen)
