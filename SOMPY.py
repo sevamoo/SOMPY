@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 
-# Vahid Moosavi 2014 11 05 12:58 pm
+# Vahid Moosavi 2015 02 04 10:08 pm
 #sevamoo@gmail.com
 #Chair For Computer Aided Architectural Design, ETH  Zurich
 # Future Cities Lab
@@ -36,9 +36,9 @@ import pandas as pd
 
 class SOM(object):
     
-    def __init__(self,name,Data, mapsize = None, norm_method = 'var',initmethod = 'pca'):
+    def __init__(self,name,Data, mapsize = None, norm_method = 'var',initmethod = 'pca',neigh='Guassian'):
         """
-        name and data
+        name and data, neigh== Bubble or Guassian
         """
         self.name = name
         self.data_raw = Data   
@@ -53,6 +53,7 @@ class SOM(object):
         self.set_topology(mapsize = mapsize)
         self.set_algorithm(initmethod = initmethod)
         self.calc_map_dist()
+        self.neigh = neigh
         
         #Slow for large data sets
         #self.set_data_labels()
@@ -171,7 +172,7 @@ class SOM(object):
     
     ###################################
     #visualize map
-    def view_map(self, what = 'codebook', which_dim = 'all', pack= 'Yes', text_size = 2.8,save='No', save_dir = 'empty',grid='No',text='Yes'):
+    def view_map(self, what = 'codebook', which_dim = 'all', pack= 'Yes', text_size = 2.8,save='No', save_dir = 'empty',grid='No',text='Yes',cmap='None',COL_SiZe=6):
         
         mapsize = getattr(self, 'mapsize')
         if np.min(mapsize) >1:
@@ -179,7 +180,7 @@ class SOM(object):
         		view_2d(self, text_size, which_dim = which_dim, what = what)
         	else:
 #         		print 'hi' 
-        		view_2d_Pack(self, text_size, which_dim = which_dim,what = what,save = save, save_dir = save_dir, grid=grid,text=text)
+        		view_2d_Pack(self, text_size, which_dim = which_dim,what = what,save = save, save_dir = save_dir, grid=grid,text=text,CMAP=cmap,col_sz=COL_SiZe)
         
         elif np.min(mapsize) == 1:
              view_1d(self, text_size, which_dim = which_dim, what = what)   
@@ -241,6 +242,13 @@ class SOM(object):
         batchtrain(self, njob = n_job, phase = 'finetune', shared_memory = 'no',verbose=verbose)
         err = np.mean(getattr(self, 'bmu')[1])
         if verbose=='on': 
+#         or verbose == 'off':
+#             print
+            ts = round(time() - t0, 3)
+            print
+            print "Total time elapsed: %f secodns" %ts
+            print "final quantization error: %f" %err 
+        if verbose=='final': 
 #         or verbose == 'off':
 #             print
             ts = round(time() - t0, 3)
@@ -367,7 +375,7 @@ class SOM(object):
     	#this is not an appropriate way, but it works
     	coord[:,1] = msz[0]-coord[:,1]
     	###############################
-    	fig = plt.figure(figsize=(msz[1]/2,msz[0]/2))
+    	fig = plt.figure(figsize=(msz[1]/5,msz[0]/5))
     	ax = fig.add_subplot(111)
     	ax.xaxis.set_ticks([i for i in range(0,msz[1])])
     	ax.yaxis.set_ticks([i for i in range(0,msz[0])])
@@ -408,7 +416,7 @@ class SOM(object):
     def hit_map_cluster_number(self,data=None):
     	if hasattr(self, 'cluster_labels'):
     		codebook = getattr(self, 'cluster_labels')
-    		print 'yesyy'
+#     		print 'yesyy'
     	else:
     		print 'clustering based on default parameters...'
     		codebook = self.cluster()
@@ -435,7 +443,7 @@ class SOM(object):
     		y = np.arange(.5,msz[0]+.5,1)
     		cents = self.ind_to_xy(proj)
 #     		cents[:,1] = cents[:,1]+.2
-    		print cents.shape
+#     		print cents.shape
     		label = codebook[proj]
     		for i, txt in enumerate(label):
 	    		ax.annotate(txt, (cents[i,1],cents[i,0]),size=10, va="center")
@@ -445,7 +453,7 @@ class SOM(object):
     	plt.imshow(codebook.reshape(msz[0],msz[1])[::],alpha=.5)
 #     	plt.pcolor(codebook.reshape(msz[0],msz[1])[::-1],alpha=.5,cmap='jet')
     	plt.show()
-    	return codebook
+    	return cents
 
 
     
@@ -512,17 +520,16 @@ class SOM(object):
         	data = normalize_by(data_raw, data, method='var')
         	weights,ind= clf.kneighbors(data)    
         	
-        	weights = 1./weights
+        	
         	
         	##Softmax function 
-        	S_  = np.sum(np.exp(weights),axis=1)[:,np.newaxis]
-        	weights = np.exp(weights)/S_
+         	weights = 1./weights
+         	S_  = np.sum(np.exp(weights),axis=1)[:,np.newaxis]
+         	weights = np.exp(weights)/S_
+         	
         	
         	
-        	
-#         	sum_ = np.sum(weights,axis=1)
-#         	weights = weights/sum_[:,np.newaxis]
-        	return weights , ind	
+        return weights , ind	
         	
         	
         
@@ -558,6 +565,9 @@ class SOM(object):
         dim = getattr(self, 'dim')
         New_Codebook = np.empty((nnodes, dim))
         inds = bmu[0].astype(int)
+#         print 'bmu', bmu[0]
+#         fig = plt.hist(bmu[0],bins=100)
+#         plt.show()
         row = inds
         col = np.arange(dlen)
         val = np.tile(1,dlen)
@@ -574,11 +584,18 @@ class SOM(object):
         #assert( Nom.shape == (nnodes, dim))
         nV = np.empty((1,nnodes))
         nV = P.sum(axis = 1).reshape(1, nnodes)
+#         print 'nV', nV
+#         print 'H'
+#         print  H
         #assert(nV.shape == (1, nnodes))
         Denom = np.empty((nnodes,1))
         Denom = nV.dot(H.T).reshape(nnodes, 1)
+#         print 'Denom'
+#         print  Denom
         #assert( Denom.shape == (nnodes, 1))
         New_Codebook = np.divide(Nom, Denom)
+#         print 'codebook'
+#         print New_Codebook.sum(axis=1)
         Nom = None
         Denom = None
         #assert (New_Codebook.shape == (nnodes,dim))
@@ -638,23 +655,27 @@ def batchtrain(self, njob = 1, phase = None, shared_memory = 'no', verbose='on')
     #case 'finetune', sTrain.trainlen = ceil(40*mpd);
     if phase == 'rough':
         #training length
-        trainlen = int(np.ceil(10*mpd))
+        trainlen = int(np.ceil(30*mpd))
         #radius for updating
         if initmethod == 'random':
-#         	trainlen = int(np.ceil(15*mpd))
-        	radiusin = max(1, np.ceil(ms/2.))
-        	radiusfin = max(1, radiusin/8.)
+        	radiusin = max(1, np.ceil(ms/3.))
+        	radiusfin = max(1, radiusin/6.)
+#         	radiusin = max(1, np.ceil(ms/1.))
+#         	radiusfin = max(1, radiusin/2.)
         elif initmethod == 'pca':
             radiusin = max(1, np.ceil(ms/8.))
             radiusfin = max(1, radiusin/4.)
     elif phase == 'finetune':
         #train lening length
-        trainlen = int(np.ceil(40*mpd))
+        trainlen = int(np.ceil(60*mpd))
         #radius for updating
         if initmethod == 'random':
-#             trainlen = int(np.ceil(50*mpd))
-            radiusin = max(1, ms/8.) #from radius fin in rough training  
-            radiusfin = max(1, radiusin/16.)
+            trainlen = int(np.ceil(50*mpd))
+            radiusin = max(1, ms/12.) #from radius fin in rough training  
+            radiusfin = max(1, radiusin/25.)
+            
+#             radiusin = max(1, ms/2.) #from radius fin in rough training  
+#             radiusfin = max(1, radiusin/2.)
         elif initmethod == 'pca':
             radiusin = max(1, np.ceil(ms/8.)/4)
             radiusfin = 1#max(1, ms/128)        
@@ -681,9 +702,18 @@ def batchtrain(self, njob = 1, phase = None, shared_memory = 'no', verbose='on')
     if verbose=='on':
         print '%s training...' %phase
         print 'radius_ini: %f , radius_final: %f, trainlen: %d' %(radiusin, radiusfin, trainlen)
+    neigh_func = getattr(self,'neigh')
     for i in range(trainlen):
-        #in case of Guassian neighborhood
-        H = np.exp(-1.0*UD2/(2.0*radius[i]**2)).reshape(nnodes, nnodes)
+    	if neigh_func == 'Guassian':
+        	#in case of Guassian neighborhood
+        	H = np.exp(-1.0*UD2/(2.0*radius[i]**2)).reshape(nnodes, nnodes)
+        if neigh_func == 'Bubble':
+        	# in case of Bubble function
+#         	print radius[i], UD2.shape
+#         	print UD2
+        	H = l(radius[i],np.sqrt(UD2.flatten())).reshape(nnodes, nnodes) + .000000000001
+#         	print H
+        
         t1 = time()
         bmu = None
         bmu = self.para_bmu_find(data, New_Codebook_V, njb = njob)
@@ -817,8 +847,11 @@ def view_2d(self, text_size,which_dim='all', what = 'codebook'):
         plt.show()    
 
 
-def view_2d_Pack(self, text_size,which_dim='all', what = 'codebook',save='No', grid='Yes', save_dir = 'empty',text='Yes'):
+def view_2d_Pack(self, text_size,which_dim='all', what = 'codebook',save='No', grid='Yes', save_dir = 'empty',text='Yes',CMAP='None',col_sz=None):
+    import matplotlib.cm as cm
     msz0, msz1 = getattr(self, 'mapsize')
+    if CMAP=='None':
+    	CMAP= cm.RdYlBu_r
     if what == 'codebook':
         if hasattr(self, 'codebook'):
             codebook = getattr(self, 'codebook')
@@ -850,17 +883,17 @@ def view_2d_Pack(self, text_size,which_dim='all', what = 'codebook',save='No', g
 #             plt.figure(figsize=(sH,sV))
             
 #         plt.figure(figsize=(7,7))
-        no_row_in_plot = dim/20 + 1 #6 is arbitrarily selected
+        no_row_in_plot = dim/col_sz + 1 #6 is arbitrarily selected
         if no_row_in_plot <=1:
             no_col_in_plot = dim
         else:
-            no_col_in_plot = 20
+            no_col_in_plot = col_sz
         
         axisNum = 0
         compname = getattr(self, 'compname')
-        h = .2
-        w= .001
-        fig = plt.figure(figsize=(no_col_in_plot*1.5*(1+w),no_row_in_plot*1.5*(1+h)))
+        h = .1
+        w= .1
+        fig = plt.figure(figsize=(no_col_in_plot*2.5*(1+w),no_row_in_plot*2.5*(1+h)))
 #         print no_row_in_plot, no_col_in_plot
         norm = matplotlib.colors.Normalize(vmin = np.median(codebook.flatten())-1.5*np.std(codebook.flatten()), vmax = np.median(codebook.flatten())+1.5*np.std(codebook.flatten()), clip = False)
         
@@ -877,7 +910,7 @@ def view_2d_Pack(self, text_size,which_dim='all', what = 'codebook',save='No', g
             if grid=='Yes':
             	pl = plt.pcolor(mp[::-1])
             elif grid=='No':
-            	plt.imshow(mp[::-1],norm = None)
+            	plt.imshow(mp[::-1],norm = None,cmap=CMAP)
 #             	plt.pcolor(mp[::-1])
             	plt.axis('off')
             
@@ -935,11 +968,11 @@ def view_2d_Pack(self, text_size,which_dim='all', what = 'codebook',save='No', g
         	
         	if save_dir != 'empty':
 #         		print save_dir
-        		fig.savefig(save_dir,bbox_inches='tight', transparent=False, dpi=200) 
+        		fig.savefig(save_dir,bbox_inches='tight', transparent=False, dpi=400) 
         	else:
 #         		print save_dir
         		add = '/Users/itadmin/Desktop/SOM.png'
-        		fig.savefig(add,bbox_inches='tight', transparent=False, dpi=200)    
+        		fig.savefig(add,bbox_inches='tight', transparent=False, dpi=400)    
         	
         	plt.close(fig)
 
@@ -1113,7 +1146,11 @@ def denormalize_by(data_by, n_vect, n_method = 'var'):
     else:
         print 'data is not normalized before'
         return n_vect  
-        
+
+def l(a,b):
+    c = np.zeros(b.shape)
+    c[a-b >=0] = 1
+    return c
         
 ##Function to show hits
 #som_labels = sm.project_data(Tr_Data)
