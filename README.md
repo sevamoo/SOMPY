@@ -13,6 +13,7 @@ As much as possible, the structure of SOM is similar to somtoolbox in Matlab. It
 4- different methods for function approximation and predictions (mostly using Sklearn)
 
 more information about the codes can be found here:
+
 http://bit.ly/1DHdLpn
 
 http://bit.ly/1zfn77s
