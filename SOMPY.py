@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 
-# Vahid Moosavi 2015 02 04 10:08 pm
+# Vahid Moosavi 2015 03 12 10:04 pm
 #sevamoo@gmail.com
 #Chair For Computer Aided Architectural Design, ETH  Zurich
 # Future Cities Lab
@@ -373,7 +373,8 @@ class SOM(object):
     	coord = self.ind_to_xy(proj)
     	
     	#this is not an appropriate way, but it works
-    	coord[:,1] = msz[0]-coord[:,1]
+    	coord[:,0] = msz[0]-coord[:,0]
+    	
     	###############################
     	fig = plt.figure(figsize=(msz[1]/5,msz[0]/5))
     	ax = fig.add_subplot(111)
@@ -968,11 +969,11 @@ def view_2d_Pack(self, text_size,which_dim='all', what = 'codebook',save='No', g
         	
         	if save_dir != 'empty':
 #         		print save_dir
-        		fig.savefig(save_dir,bbox_inches='tight', transparent=False, dpi=400) 
+        		fig.savefig(save_dir,bbox_inches='tight', transparent=False, dpi=200) 
         	else:
 #         		print save_dir
         		add = '/Users/itadmin/Desktop/SOM.png'
-        		fig.savefig(add,bbox_inches='tight', transparent=False, dpi=400)    
+        		fig.savefig(add,bbox_inches='tight', transparent=False, dpi=200)    
         	
         	plt.close(fig)
 
