@@ -1,4 +1,4 @@
-SOMPY extencded
+SOMPY extended
 ==================
 
 A Python Library for Self Organizing Map (SOM) ... 
