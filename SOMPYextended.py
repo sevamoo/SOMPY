@@ -344,8 +344,17 @@ def view_umatrix2(self, um, text_size,which_dim='all', what = 'umatrix',save='No
         
         fig = plt.figure(figsize=(msz[1]/2.5,msz[0]/2.5))
         ax = fig.add_subplot(111)
+        #array as image    
+ 
         plt.imshow(um.reshape(msz[0],msz[1])[::],alpha=.5)
-        plt.pcolor(self.codebook.reshape(msz[0],msz[1])[::-1],alpha=.5,cmap='jet')
+        ###
+        #draw circles
+#        plt.scatter(X, Y, s=area, alpha=0.2,c='b',marker='o',cmap='jet',linewidths=3, edgecolor = 'r')
+#        #plt.scatter(X, Y, s=area, alpha=0.9,c='None',marker='o',cmap='jet',linewidths=3, edgecolor = 'r')            
+#        plt.xlim(0,msz[0])
+#        plt.ylim(0,msz[1])
+ 
+        ###
         plt.show()
         #####################
         #plot blur cluster borders END
