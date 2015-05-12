@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 
-# Vahid Moosavi 2015 03 12 10:04 pm
+# Vahid Moosavi 2015 05 12 09:04 pm
 #sevamoo@gmail.com
 #Chair For Computer Aided Architectural Design, ETH  Zurich
 # Future Cities Lab
@@ -13,7 +13,6 @@ import matplotlib.gridspec as gridspec
 import numexpr as ne
 from time import time
 import scipy.spatial as spdist
-import tables as tb
 import timeit
 import sys
 from sklearn.externals.joblib import Parallel, delayed
@@ -413,7 +412,6 @@ class SOM(object):
     	plt.show()
     
     
-    
     def hit_map_cluster_number(self,data=None):
     	if hasattr(self, 'cluster_labels'):
     		codebook = getattr(self, 'cluster_labels')
@@ -455,7 +453,43 @@ class SOM(object):
 #     	plt.pcolor(codebook.reshape(msz[0],msz[1])[::-1],alpha=.5,cmap='jet')
     	plt.show()
     	return cents
-
+    
+    def view_map_dot(self,colormap=None,cols=None,save='No',save_dir='',text_size=8):
+		if colormap==None:
+			colormap = plt.cm.get_cmap('jet_r')
+		data = self.data_raw
+		proj = self.project_data(data)
+		coords = self.ind_to_xy(proj)[:,:2]   
+		fig = plt.figure()
+		if cols==None:
+			cols=8
+		rows = data.shape[1]/cols+1
+		for i in range(data.shape[1]):
+			plt.subplot(rows,cols,i+1)
+			mn = data[:,i].min()
+			mx = data[:,i].max()
+			plt.scatter(coords[:,1],self.mapsize[0]-1-coords[:,0],c=data[:,i],vmax=mx,vmin=mn,s=180,marker='.',edgecolor='None', cmap=colormap ,alpha=1)
+			eps = .75
+			plt.xlim(0-eps,self.mapsize[1]-1+eps)
+			plt.ylim(0-eps,self.mapsize[0]-1+eps)
+			plt.axis('off')
+			plt.title(self.compname[0][i])
+			font = {'size'   : text_size}
+			plt.rc('font', **font)
+			plt.axis('on')
+			plt.xticks([])
+			plt.yticks([])
+		plt.tight_layout()
+		# 		plt.colorbar(sc,ticks=np.round(np.linspace(mn,mx,5),decimals=1),shrink=0.6)
+		plt.subplots_adjust(hspace = .16,wspace=.05)
+		fig.set_size_inches(20,20)
+		if save=='Yes':
+			if save_dir != 'empty':
+				fig.savefig(save_dir, transparent=False, dpi=200) 
+			else:
+				add = '/Users/itadmin/Desktop/SOM_dot.png'
+				print 'save directory: ', add
+				fig.savefig(add, transparent=False, dpi=200)    
 
     
     
@@ -649,7 +683,7 @@ def batchtrain(self, njob = 1, phase = None, shared_memory = 'no', verbose='on')
     
     ms = max(mapsize[0],mapsize[1])
     if mn == 1:
-        ms = ms/5.
+        ms = ms/2.
     #Based on somtoolbox, Matlab
     #case 'train',    sTrain.trainlen = ceil(50*mpd);
     #case 'rough',    sTrain.trainlen = ceil(10*mpd); 
@@ -668,7 +702,7 @@ def batchtrain(self, njob = 1, phase = None, shared_memory = 'no', verbose='on')
             radiusfin = max(1, radiusin/4.)
     elif phase == 'finetune':
         #train lening length
-        trainlen = int(np.ceil(60*mpd))
+        
         #radius for updating
         if initmethod == 'random':
             trainlen = int(np.ceil(50*mpd))
@@ -678,8 +712,9 @@ def batchtrain(self, njob = 1, phase = None, shared_memory = 'no', verbose='on')
 #             radiusin = max(1, ms/2.) #from radius fin in rough training  
 #             radiusfin = max(1, radiusin/2.)
         elif initmethod == 'pca':
-            radiusin = max(1, np.ceil(ms/8.)/4)
-            radiusfin = 1#max(1, ms/128)        
+        	trainlen = int(np.ceil(40*mpd))
+        	radiusin = max(1, np.ceil(ms/8.)/4)
+        	radiusfin = 1#max(1, ms/128)        
     
     radius = np.linspace(radiusin, radiusfin, trainlen)
     ##################################################    
@@ -788,7 +823,9 @@ def rect_dist(self,bmu):
         print 'please consider the above mentioned errors'
         return np.zeros((rows,cols)).ravel()
         
-
+            
+            
+            
 def view_2d(self, text_size,which_dim='all', what = 'codebook'):
     msz0, msz1 = getattr(self, 'mapsize')
     if what == 'codebook':
