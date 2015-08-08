@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 
-# Vahid Moosavi 2015 05 12 09:04 pm
+# Vahid Moosavi 2015 08 08 10:50 am
 #sevamoo@gmail.com
 #Chair For Computer Aided Architectural Design, ETH  Zurich
 # Future Cities Lab
@@ -372,7 +372,7 @@ class SOM(object):
     	coord = self.ind_to_xy(proj)
     	
     	#this is not an appropriate way, but it works
-    	coord[:,0] = msz[0]-coord[:,0]
+#     	coord[:,0] = msz[0]-coord[:,0]
     	
     	###############################
     	fig = plt.figure(figsize=(msz[1]/5,msz[0]/5))
@@ -382,34 +382,123 @@ class SOM(object):
     	ax.xaxis.set_ticklabels([])
     	ax.yaxis.set_ticklabels([])
     	ax.grid(True,linestyle='-', linewidth=.5)
-    	a = plt.hist2d(coord[:,1], coord[:,0], bins=(msz[1],msz[0]),alpha=.0,norm = LogNorm(),cmap=cm.jet)
+    	a = plt.hist2d(coord[:,1], coord[:,0], bins=(msz[1],msz[0]),alpha=.0,cmap=cm.jet)
     	# clbar  = plt.colorbar()
     	x = np.arange(.5,msz[1]+.5,1)
     	y = np.arange(.5,msz[0]+.5,1)
     	X, Y = np.meshgrid(x, y)
     	area = a[0].T*12
-    	plt.scatter(X, Y, s=area, alpha=0.2,c='b',marker='o',cmap='jet',linewidths=3, edgecolor = 'r')
-    	plt.scatter(X, Y, s=area, alpha=0.9,c='None',marker='o',cmap='jet',linewidths=3, edgecolor = 'r')
+    	
+    	# plt.scatter(coord[:,1]+.5, msz[0]-.5-coord[:,0], s=area, alpha=0.9,c='None',marker='o',cmap='jet',linewidths=3, edgecolor = 'r')
+#     	plt.scatter(coord[:,1]+.5, msz[0]-.5-coord[:,0], s=area, alpha=0.2,c='b',marker='o',cmap='jet',linewidths=3, edgecolor = 'r')
+    	coord = self.ind_to_xy(np.arange(self.nnodes))
+        plt.scatter(coord[:,1], msz[0]-.5- coord[:,0], s=area.flatten(), alpha=.9,c='None',marker='o',cmap='jet',linewidths=3, edgecolor = 'r')
     	plt.xlim(0,msz[1])
     	plt.ylim(0,msz[0])
 
     	if data != None:
     		proj = self.project_data(data)
     		msz =  getattr(self, 'mapsize')
-    		coord = self.ind_to_xy(proj)
-    		a = plt.hist2d(coord[:,1], coord[:,0], bins=(msz[1],msz[0]),alpha=.0,norm = LogNorm(),cmap=cm.jet)
+    		coord_d = self.ind_to_xy(proj)
+    		a = plt.hist2d(coord_d[:,1], coord_d[:,0], bins=(msz[1],msz[0]),alpha=.0,norm = LogNorm(),cmap=cm.jet)
     		# clbar  = plt.colorbar()
     		x = np.arange(.5,msz[1]+.5,1)
     		y = np.arange(.5,msz[0]+.5,1)
     		X, Y = np.meshgrid(x, y)
+    		
     		area = a[0].T*50
-    		plt.scatter(X, Y, s=area, alpha=0.2,c='b',marker='o',cmap='jet',linewidths=3, edgecolor = 'r')
-    		plt.scatter(X, Y, s=area, alpha=0.9,c='None',marker='o',cmap='jet',linewidths=3, edgecolor = 'r')    		
+    		
+    		plt.scatter(coord_d[:,1]+.5, msz[0]-.5-coord_d[:,0], s=area, alpha=0.9,c='None',marker='o',cmap='jet',linewidths=3, edgecolor = 'r')
+    		plt.scatter(coord_d[:,1]+.5, msz[0]-.5-coord_d[:,0], s=area, alpha=0.2,c='b',marker='o',cmap='jet',linewidths=3, edgecolor = 'r')
+    		print 'hi'
+#     		plt.scatter(coord[:,1], msz[0]-1-coord[:,0], s=area, alpha=0.2,c='b',marker='o',cmap='jet',linewidths=3, edgecolor = 'r')
+#     		plt.scatter(X, msz[0]-1-Y, s=area, alpha=0.2,c='b',marker='o',cmap='jet',linewidths=3, edgecolor = 'r')# 
+#     		plt.scatter(X, msz[0]-1-Y, s=area, alpha=0.9,c='None',marker='o',cmap='jet',linewidths=3, edgecolor = 'r')    		
     		plt.xlim(0,msz[1])
     		plt.ylim(0,msz[0])
     	
     	
     	plt.show()
+    
+    def U_matrix(self,distance=1,row_normalized='Yes'):
+    	import scipy
+    	UD2 = self.UD2
+    	Umatrix = np.zeros((self.nnodes,1))
+    	if row_normalized=='Yes':
+        	vector = normalize_by(self.codebook.T, self.codebook.T, method='var').T
+        	
+    	else:
+        	vector = self.codebook
+    	for i in range(self.nnodes):
+        	codebook_i = vector[i][np.newaxis,:]
+        	neighbor_ind = UD2[i][0:]<=distance
+        	neighbor_codebooks = vector[neighbor_ind]
+        	Umatrix[i]  = scipy.spatial.distance_matrix(codebook_i,neighbor_codebooks).mean()
+    	return Umatrix.reshape(self.mapsize)
+
+    def view_U_matrix(self,distance2=4,row_normalized='Yes',show_data='Yes',contooor='Yes',blob = 'Yes',save='Yes',save_dir = ''):
+    	import scipy
+    	from pylab import meshgrid,cm,imshow,contour,clabel,colorbar,axis,title,show
+    	umat = self.U_matrix(distance=distance2,row_normalized=row_normalized) 
+    	data = getattr(self, 'data_raw')
+    	proj = self.project_data(data)
+    	msz =  getattr(self, 'mapsize')
+    	coord = self.ind_to_xy(proj)
+	#     freq = plt.hist2d(coord[:,1], coord[:,0], bins=(msz[1],msz[0]),alpha=1.0,cmap=cm.jet)[0]
+	#     plt.close()
+   	 
+	#     fig, ax = plt.figure()
+    	fig, ax= plt.subplots(1, 1)
+    	im = imshow(umat,cmap=cm.RdYlBu_r,alpha=1) # drawing the function
+    	# adding the Contour lines with labels`
+    	# imshow(freq[0].T,cmap=cm.jet_r,alpha=1)
+    	if contooor=='Yes':
+        	mn = np.min(umat.flatten())
+        	mx = np.max(umat.flatten())
+        	std = np.std(umat.flatten())
+        	md = np.median(umat.flatten())
+        	mx = md + 0*std
+#         	mn = md
+#         	umat[umat<=mn]=mn
+        	cset = contour(umat,np.linspace(mn,mx,15),linewidths=0.7,cmap=cm.Blues)
+    
+    	if show_data=='Yes':
+        	plt.scatter(coord[:,1], coord[:,0], s=2, alpha=1.,c='Gray',marker='o',cmap='jet',linewidths=3, edgecolor = 'Gray')
+        	plt.axis('off')
+    
+    	ratio = float(msz[0])/(msz[0]+msz[1])
+    	fig.set_size_inches((1-ratio)*15,ratio*15)
+    	plt.tight_layout()
+    	plt.subplots_adjust(hspace = .00,wspace=.000)
+    	sel_points = list()
+    	if blob=='Yes':
+        	from skimage.feature import blob_dog, blob_log, blob_doh
+        	from math import sqrt
+        	from skimage.color import rgb2gray
+        	image = 1/umat
+        	image_gray = rgb2gray(image)
+
+        	#'Laplacian of Gaussian'
+        	blobs = blob_log(image, max_sigma=5, num_sigma=4, threshold=.152)
+        	blobs[:, 2] = blobs[:, 2] * sqrt(2)
+        	imshow(umat,cmap=cm.RdYlBu_r,alpha=1)
+        	sel_points = list()
+        	for blob in blobs:
+        		row, col, r = blob
+        		c = plt.Circle((col, row), r, color='red', linewidth=2, fill=False)
+        		ax.add_patch(c)
+        		dist = scipy.spatial.distance_matrix(coord[:,:2],np.array([row,col])[np.newaxis,:])
+        		sel_point = dist <= r
+        		plt.plot(coord[:,1][sel_point[:,0]], coord[:,0][sel_point[:,0]],'.r')
+        		sel_points.append(sel_point[:,0])
+
+            
+        if save=='Yes':
+        	fig.savefig(save_dir, transparent=False, dpi=400) 
+        return sel_points,umat
+
+    
+    
     
     
     def hit_map_cluster_number(self,data=None):
@@ -454,42 +543,119 @@ class SOM(object):
     	plt.show()
     	return cents
     
-    def view_map_dot(self,colormap=None,cols=None,save='No',save_dir='',text_size=8):
+    def view_map_dot(self,which_dim='all',colormap=None,cols=None,save='No',save_dir='',text_size=8):
+		import matplotlib.cm as cm
 		if colormap==None:
-			colormap = plt.cm.get_cmap('jet_r')
+			colormap = plt.cm.get_cmap('RdYlBu_r')
+		else:
+			colormap = plt.cm.get_cmap(colormap)
 		data = self.data_raw
+		msz0, msz1 = getattr(self, 'mapsize')
 		proj = self.project_data(data)
 		coords = self.ind_to_xy(proj)[:,:2]   
 		fig = plt.figure()
 		if cols==None:
 			cols=8
 		rows = data.shape[1]/cols+1
-		for i in range(data.shape[1]):
-			plt.subplot(rows,cols,i+1)
-			mn = data[:,i].min()
-			mx = data[:,i].max()
-			plt.scatter(coords[:,1],self.mapsize[0]-1-coords[:,0],c=data[:,i],vmax=mx,vmin=mn,s=180,marker='.',edgecolor='None', cmap=colormap ,alpha=1)
-			eps = .75
-			plt.xlim(0-eps,self.mapsize[1]-1+eps)
-			plt.ylim(0-eps,self.mapsize[0]-1+eps)
-			plt.axis('off')
-			plt.title(self.compname[0][i])
-			font = {'size'   : text_size}
-			plt.rc('font', **font)
-			plt.axis('on')
-			plt.xticks([])
-			plt.yticks([])
+		if which_dim == 'all':
+			dim = data.shape[0]
+			rows = len(which_dim)/cols+1
+			no_row_in_plot = dim/cols + 1 #6 is arbitrarily selected
+			if no_row_in_plot <=1:
+				no_col_in_plot = dim
+			else:
+				no_col_in_plot = cols
+			h = .1
+			w= .1
+			fig = plt.figure(figsize=(no_col_in_plot*2.5*(1+w),no_row_in_plot*2.5*(1+h)))
+			for i in range(data.shape[1]):
+				plt.subplot(rows,cols,i+1)
+				
+				#this uses the colors uniquely for each record, while in normal views, it is based on the values within each dimensions.
+				#This is important when we are dealing with time series. Where we don't want to normalize colors within each time period, rather we like to see th
+				#the patterns of each data records in time.
+				mn = np.min(data[:,:],axis=1)
+				mx = np.max(data[:,:],axis=1)
+# 				print mx.shape
+# 				print coords.shape
+				for j in range(data.shape[0]):
+					sc = plt.scatter(coords[j,1],self.mapsize[0]-1-coords[j,0],c=data[j,which_dim[i]],vmax=mx[j],vmin=mn[j],s=90,marker='.',edgecolor='None', cmap=colormap ,alpha=1)
+
+				
+				
+				mn = dat# a[:,i].min()
+# 				mx = data[:,i].max()
+# 				plt.scatter(coords[:,1],self.mapsize[0]-1-coords[:,0],c=data[:,i],vmax=mx,vmin=mn,s=180,marker='.',edgecolor='None', cmap=colormap ,alpha=1)
+				
+				
+				
+				
+				
+				eps = .0075
+				plt.xlim(0-eps,self.mapsize[1]-1+eps)
+				plt.ylim(0-eps,self.mapsize[0]-1+eps)
+				plt.axis('off')
+				plt.title(self.compname[0][i])
+				font = {'size'   : text_size}
+				plt.rc('font', **font)
+				plt.axis('on')
+				plt.xticks([])
+				plt.yticks([])
+		else:
+			dim = len(which_dim)
+			rows = len(which_dim)/cols+1
+			no_row_in_plot = dim/cols + 1 #6 is arbitrarily selected
+			if no_row_in_plot <=1:
+				no_col_in_plot = dim
+			else:
+				no_col_in_plot = cols
+			h = .1
+			w= .1
+			fig = plt.figure(figsize=(no_col_in_plot*2.5*(1+w),no_row_in_plot*2.5*(1+h)))	
+			for i in range(len(which_dim)):
+				plt.subplot(rows,cols,i+1)
+				mn = np.min(data[:,:],axis=1)
+				mx = np.max(data[:,:],axis=1)
+# 				print mx.shape
+# 				print coords.shape
+				for j in range(data.shape[0]):
+					sc = plt.scatter(coords[j,1],self.mapsize[0]-1-coords[j,0],c=data[j,which_dim[i]],vmax=mx[j],vmin=mn[j],s=90,marker='.',edgecolor='None', cmap=colormap ,alpha=1)
+
+				
+				
+				
+# 				mn = data[:,which_dim[i]].min()
+# 				mx = data[:,which_dim[i]].max()
+# 				plt.scatter(coords[:,1],self.mapsize[0]-1-coords[:,0],c=data[:,which_dim[i]],vmax=mx,vmin=mn,s=180,marker='.',edgecolor='None', cmap=colormap ,alpha=1)
+				
+				
+				
+				
+				eps = .0075
+				plt.xlim(0-eps,self.mapsize[1]-1+eps)
+				plt.ylim(0-eps,self.mapsize[0]-1+eps)
+				plt.axis('off')
+				plt.title(self.compname[0][which_dim[i]])
+				font = {'size'   : text_size}
+				plt.rc('font', **font)
+				plt.axis('on')
+				plt.xticks([])
+				plt.yticks([])
+		 
 		plt.tight_layout()
 		# 		plt.colorbar(sc,ticks=np.round(np.linspace(mn,mx,5),decimals=1),shrink=0.6)
 		plt.subplots_adjust(hspace = .16,wspace=.05)
-		fig.set_size_inches(20,20)
+# 		fig.set_size_inches(msz0/2,msz1/2)
+# 		fig = plt.figure(figsize=(msz0/2,msz1/2))
 		if save=='Yes':
 			if save_dir != 'empty':
 				fig.savefig(save_dir, transparent=False, dpi=200) 
 			else:
 				add = '/Users/itadmin/Desktop/SOM_dot.png'
 				print 'save directory: ', add
-				fig.savefig(add, transparent=False, dpi=200)    
+				fig.savefig(add, transparent=False, dpi=200)
+			
+			plt.close(fig)    
 
     
     
@@ -559,8 +725,8 @@ class SOM(object):
         	
         	##Softmax function 
          	weights = 1./weights
-         	S_  = np.sum(np.exp(weights),axis=1)[:,np.newaxis]
-         	weights = np.exp(weights)/S_
+#          	S_  = np.sum(np.exp(weights),axis=1)[:,np.newaxis]
+#          	weights = np.exp(weights)/S_
          	
         	
         	
@@ -890,6 +1056,7 @@ def view_2d_Pack(self, text_size,which_dim='all', what = 'codebook',save='No', g
     msz0, msz1 = getattr(self, 'mapsize')
     if CMAP=='None':
     	CMAP= cm.RdYlBu_r
+#     	CMAP = cm.jet
     if what == 'codebook':
         if hasattr(self, 'codebook'):
             codebook = getattr(self, 'codebook')
@@ -946,7 +1113,7 @@ def view_2d_Pack(self, text_size,which_dim='all', what = 'codebook',save='No', g
             mp = codebook[:,ind].reshape(msz0, msz1)
             
             if grid=='Yes':
-            	pl = plt.pcolor(mp[::-1])
+            	pl = plt.pcolor(mp[::-1],cmap=CMAP)
             elif grid=='No':
             	plt.imshow(mp[::-1],norm = None,cmap=CMAP)
 #             	plt.pcolor(mp[::-1])
@@ -981,9 +1148,10 @@ def view_2d_Pack(self, text_size,which_dim='all', what = 'codebook',save='No', g
         ax = fig.add_subplot(1, 1, 1)
         mp = codebook[:].reshape(msz0, msz1)
         if grid=='Yes':
-            pl = plt.pcolor(mp[::-1])
+        	plt.imshow(mp[::-1],cmap=CMAP)
+#         pl = plt.pcolor(mp[::-1],cmap=CMAP)
         elif grid=='No':
-            plt.imshow(mp[::-1])
+            plt.imshow(mp[::-1],cmap=CMAP)
 #             plt.pcolor(mp[::-1])
             plt.axis('off')
             
