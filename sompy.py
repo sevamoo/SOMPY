@@ -436,7 +436,7 @@ class SOM(object):
         	Umatrix[i]  = scipy.spatial.distance_matrix(codebook_i,neighbor_codebooks).mean()
     	return Umatrix.reshape(self.mapsize)
 
-    def view_U_matrix(self,distance2=4,row_normalized='Yes',show_data='Yes',contooor='Yes',blob = 'Yes',save='Yes',save_dir = ''):
+    def view_U_matrix(self,distance2=1,row_normalized='No',show_data='Yes',contooor='Yes',blob = 'No',save='No',save_dir = ''):
     	import scipy
     	from pylab import meshgrid,cm,imshow,contour,clabel,colorbar,axis,title,show
     	umat = self.U_matrix(distance=distance2,row_normalized=row_normalized) 
