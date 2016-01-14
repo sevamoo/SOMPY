@@ -24,57 +24,52 @@ import itertools
 from scipy.sparse import csr_matrix
 from sklearn.decomposition import RandomizedPCA
 from sklearn.decomposition import PCA
-from sklearn import neighbors
+from sklearn import neighborbors
 from matplotlib.colors import LogNorm
 from matplotlib import cm
 import matplotlib
 import pandas as pd
 
 
-
-
 class SOM(object):
-    
-    def __init__(self,name,Data, mapsize = None, norm_method = 'var',initmethod = 'pca',neigh='Guassian'):
+
+    def __init__(self, name, data, mapsize=None, normalization='var', initialization='pca', neighbor='Guassian'):
         """
-        name and data, neigh== Bubble or Guassian
+        name and data, neighbor== Bubble or Guassian
         """
         self.name = name
-        self.data_raw = Data   
-        if norm_method == 'var':    
-            Data = normalize(Data, method=norm_method)
-            self.data = Data
-        
+        self.data_raw = data   
+        if normalization == 'var':    
+            data = normalize(data, method=normalization)
+            self.data = data
+
         else:
-            self.data = Data
-        self.dim = Data.shape[1]
-        self.dlen = Data.shape[0]
-        self.set_topology(mapsize = mapsize)
-        self.set_algorithm(initmethod = initmethod)
+            self.data = data
+        self.dim = data.shape[1]
+        self.dlen = data.shape[0]
+        self.set_topology(mapsize=mapsize)
+        self.set_algorithm(initialization=initialization)
         self.calc_map_dist()
-        self.neigh = neigh
-        
+        self.neighbor = neighbor
+
         #Slow for large data sets
         #self.set_data_labels()
 
-        
-        
-    #set SOM topology
-    def set_topology(self, mapsize = None, mapshape = 'planar', lattice = 'rect', mask = None, compname = None):
+    def set_topology(self, mapsize=None, mapshape='planar', lattice='rect', mask=None, compname=None):
         """
         all_mapshapes = ['planar','toroid','cylinder']
         all_lattices = ['hexa','rect']
         """
         self.mapshape = mapshape
         self.lattice = lattice
-        
+
         #to set mask
         if mask == None: 
             self.mask = np.ones([1,self.dim])
         else:
             self.mask = mask
-        
-    
+
+
         #to set map size
         if mapsize == None:    
             tmp = int(round(np.sqrt(self.dlen)))
@@ -92,7 +87,7 @@ class SOM(object):
                 print 'input was considered as the numbers of nodes'
                 print 'map size is [{0},{1}]'.format(s,s) 
             self.nnodes = self.mapsize[0]*self.mapsize[1]
-                
+
         # to set component names
         if compname == None:    
             try:
@@ -113,8 +108,7 @@ class SOM(object):
             except:
                 pass
                 print 'no data yet: plesae first set trainign data to the SOM'
-     
-     
+
     #Set labels of the training data
     # it should be in the format of a list of strings
     def set_data_labels(self, dlabel = None):
@@ -142,7 +136,7 @@ class SOM(object):
             except:
                 pass
                 print 'no data yet: plesae first set trainign data to the SOM'
-         
+
     #calculating the grid distance, which will be called during the training steps
     #currently just works for planar grids
     def calc_map_dist(self):
@@ -151,36 +145,34 @@ class SOM(object):
         for i in range(cd):
             UD2[i,:] = grid_dist(self, i).reshape(1,cd)
         self.UD2 =  UD2
-    
-    
-    
-    def set_algorithm(self, initmethod = 'pca', algtype = 'batch', neighborhoodmethod = 'gaussian', alfatype = 'inv', alfaini = .5, alfafinal = .005):
+
+    def set_algorithm(self, initialization = 'pca', algtype = 'batch', neighborborhoodmethod = 'gaussian', alfatype = 'inv', alfaini = .5, alfafinal = .005):
         """
-        initmethod = ['random', 'pca']
+        initialization = ['random', 'pca']
         algos = ['seq','batch']
-        all_neigh = ['gaussian','manhatan','bubble','cut_gaussian','epanechicov' ]
+        all_neighbor = ['gaussian','manhatan','bubble','cut_gaussian','epanechicov' ]
         alfa_types = ['linear','inv','power']
-        
+
         """
-        self.initmethod = initmethod
+        self.initialization = initialization
         self.algtype = algtype
         self.alfaini = alfaini
         self.alfafinal = alfafinal
-        self.neigh = neighborhoodmethod
-        
-    
+        self.neighbor = neighborborhoodmethod
+
+
     ###################################
     #visualize map
     def view_map(self, what = 'codebook', which_dim = 'all', pack= 'Yes', text_size = 2.8,save='No', save_dir = 'empty',grid='No',text='Yes',cmap='None',COL_SiZe=6):
-        
+
         mapsize = getattr(self, 'mapsize')
         if np.min(mapsize) >1:
-        	if pack == 'No':
-        		view_2d(self, text_size, which_dim = which_dim, what = what)
-        	else:
+            if pack == 'No':
+                view_2d(self, text_size, which_dim = which_dim, what = what)
+            else:
 #         		print 'hi' 
-        		view_2d_Pack(self, text_size, which_dim = which_dim,what = what,save = save, save_dir = save_dir, grid=grid,text=text,CMAP=cmap,col_sz=COL_SiZe)
-        
+                view_2d_Pack(self, text_size, which_dim = which_dim,what = what,save = save, save_dir = save_dir, grid=grid,text=text,CMAP=cmap,col_sz=COL_SiZe)
+
         elif np.min(mapsize) == 1:
              view_1d(self, text_size, which_dim = which_dim, what = what)   
 
@@ -189,20 +181,20 @@ class SOM(object):
     def init_map(self):
         dim = 0
         n_nod = 0
-        if  getattr(self, 'initmethod')=='random':
+        if  getattr(self, 'initialization')=='random':
             #It produces random values in the range of min- max of each dimension based on a uniform distribution
             mn = np.tile(np.min(getattr(self,'data'), axis =0), (getattr(self, 'nnodes'),1))
             mx = np.tile(np.max(getattr(self,'data'), axis =0), (getattr(self, 'nnodes'),1))
             setattr(self, 'codebook', mn + (mx-mn)*(np.random.rand(getattr(self, 'nnodes'), getattr(self, 'dim'))))
-        elif getattr(self, 'initmethod') == 'pca':
+        elif getattr(self, 'initialization') == 'pca':
             codebooktmp = lininit(self) #it is based on two largest eigenvalues of correlation matrix
             setattr(self, 'codebook', codebooktmp)
         else:
             print 'please select a corect initialization method'
-            print 'set a correct one in SOM. current SOM.initmethod:  ', getattr(self, 'initmethod')
+            print 'set a correct one in SOM. current SOM.initialization:  ', getattr(self, 'initialization')
             print "possible init methods:'random', 'pca'"
-     
-    
+
+
     #Main loop of training
     def train(self, trainlen = None, n_job = 1, shared_memory = 'no',verbose='on'):
         t0 = time()
@@ -220,13 +212,13 @@ class SOM(object):
         #initialization
         if verbose=='on':
             print 
-            print 'initialization method = %s, initializing..' %getattr(self, 'initmethod')
+            print 'initialization method = %s, initializing..' %getattr(self, 'initialization')
             print
             t0 = time()
         self.init_map()
         if verbose=='on':
             print 'initialization done in %f seconds' % round(time()-t0 , 3 )
-        
+
         ########################################
         #rough training
         if verbose=='on':
@@ -254,16 +246,16 @@ class SOM(object):
             print
             print "Total time elapsed: %f secodns" %ts
             print "final quantization error: %f" %err 
-    
+
     #to project a data set to a trained SOM and find the index of bmu 
-    #It is based on nearest neighborhood search module of scikitlearn, but it is not that fast.
+    #It is based on nearest neighborborhood search module of scikitlearn, but it is not that fast.
     def project_data(self, data):
         codebook = getattr(self, 'codebook')
         data_raw = getattr(self,'data_raw')
-        clf = neighbors.KNeighborsClassifier(n_neighbors = 1)
+        clf = neighborbors.KNeighborsClassifier(n_neighborbors = 1)
         labels = np.arange(0,codebook.shape[0])
         clf.fit(codebook, labels)
-        
+
         # the codebook values are all normalized
         #we can normalize the input data based on mean and std of original data
         data = normalize_by(data_raw, data, method='var')
@@ -271,8 +263,8 @@ class SOM(object):
         #plt.hist(data[:,2])
         Predicted_labels = clf.predict(data)
         return Predicted_labels
-        
-        
+
+
     def predict_by(self, data, Target, K =5, wt= 'distance'):
         """
         ‘uniform’
@@ -286,8 +278,8 @@ class SOM(object):
         indX = ind[ind != Target]
         X = codebook[:,indX]
         Y = codebook[:,Target]
-        n_neighbors = K
-        clf = neighbors.KNeighborsRegressor(n_neighbors, weights = wt)
+        n_neighborbors = K
+        clf = neighborbors.KNeighborsRegressor(n_neighborbors, weights = wt)
         clf.fit(X, Y)
         # the codebook values are all normalized
         #we can normalize the input data based on mean and std of original data
@@ -302,363 +294,363 @@ class SOM(object):
         Predicted_values = clf.predict(data)
         Predicted_values = denormalize_by(data_raw[:,Target], Predicted_values)
         return Predicted_values
-    
-    
-    def predict(self, X_test, K =5, wt= 'distance'):
-		"""
-		‘uniform’
-		"""
-		#Similar to SKlearn we assume that we have X_tr, Y_tr and X_test
-		# here it is assumed that Target is the last column in the codebook
-		#and data has dim-1 columns
-		codebook = getattr(self, 'codebook')
-		data_raw = getattr(self,'data_raw')
-		dim = codebook.shape[1]
-		Target = data_raw.shape[1]-1
-		X_train = codebook[:,:Target]
-		Y_train= codebook[:,Target]
-		n_neighbors = K
-		clf = neighbors.KNeighborsRegressor(n_neighbors, weights = wt)
-		clf.fit(X_train, Y_train)
-		# the codebook values are all normalized
-		#we can normalize the input data based on mean and std of original data
-		X_test = normalize_by(data_raw[:,:Target], X_test, method='var')
-		Predicted_values = clf.predict(X_test)
-		Predicted_values = denormalize_by(data_raw[:,Target], Predicted_values)
-		return Predicted_values
 
-    
+
+    def predict(self, X_test, K =5, wt= 'distance'):
+        """
+        ‘uniform’
+        """
+        #Similar to SKlearn we assume that we have X_tr, Y_tr and X_test
+        # here it is assumed that Target is the last column in the codebook
+        #and data has dim-1 columns
+        codebook = getattr(self, 'codebook')
+        data_raw = getattr(self,'data_raw')
+        dim = codebook.shape[1]
+        Target = data_raw.shape[1]-1
+        X_train = codebook[:,:Target]
+        Y_train= codebook[:,Target]
+        n_neighborbors = K
+        clf = neighborbors.KNeighborsRegressor(n_neighborbors, weights = wt)
+        clf.fit(X_train, Y_train)
+        # the codebook values are all normalized
+        #we can normalize the input data based on mean and std of original data
+        X_test = normalize_by(data_raw[:,:Target], X_test, method='var')
+        Predicted_values = clf.predict(X_test)
+        Predicted_values = denormalize_by(data_raw[:,Target], Predicted_values)
+        return Predicted_values
+
+
     def find_K_nodes(self, data, K =5):
-        from sklearn.neighbors import NearestNeighbors
+        from sklearn.neighborbors import NearestNeighbors
         # we find the k most similar nodes to the input vector
         codebook = getattr(self, 'codebook')
-        neigh = NearestNeighbors(n_neighbors = K)
-        neigh.fit(codebook) 
+        neighbor = NearestNeighbors(n_neighborbors = K)
+        neighbor.fit(codebook) 
         data_raw = getattr(self,'data_raw')
         # the codebook values are all normalized
         #we can normalize the input data based on mean and std of original data
         data = normalize_by(data_raw, data, method='var')
-        return neigh.kneighbors(data)  
-        
+        return neighbor.kneighborbors(data)  
+
     def ind_to_xy(self, bm_ind):
-    	msize =  getattr(self, 'mapsize')
-    	rows = msize[0]
-    	cols = msize[1]   
-    	#bmu should be an integer between 0 to no_nodes
-    	out = np.zeros((bm_ind.shape[0],3))
-    	out[:,2] = bm_ind
-    	out[:,0] = rows-1-bm_ind/cols
-    	out[:,0] = bm_ind/cols
-    	out[:,1] = bm_ind%cols
-    	return out.astype(int)
-    
+        msize =  getattr(self, 'mapsize')
+        rows = msize[0]
+        cols = msize[1]
+        #bmu should be an integer between 0 to no_nodes
+        out = np.zeros((bm_ind.shape[0],3))
+        out[:,2] = bm_ind
+        out[:,0] = rows-1-bm_ind/cols
+        out[:,0] = bm_ind/cols
+        out[:,1] = bm_ind%cols
+        return out.astype(int)
+
     def cluster(self,method='Kmeans',n_clusters=8):
-    	import sklearn.cluster as clust
-    	km= clust.KMeans(n_clusters=n_clusters)
-    	labels = km.fit_predict(denormalize_by(self.data_raw, self.codebook, n_method = 'var'))
-    	setattr(self,'cluster_labels',labels)
-    	return labels
-    
+        import sklearn.cluster as clust
+        km= clust.KMeans(n_clusters=n_clusters)
+        labels = km.fit_predict(denormalize_by(self.data_raw, self.codebook, n_method = 'var'))
+        setattr(self,'cluster_labels',labels)
+        return labels
 
-    
-    
+
+
+
     def hit_map(self,data=None):
-    	#First Step: show the hitmap of all the training data
-    	
-#     	print 'None'
-    	data_tr = getattr(self, 'data_raw')
-    	proj = self.project_data(data_tr)
-    	msz =  getattr(self, 'mapsize')
-    	coord = self.ind_to_xy(proj)
-    	
-    	#this is not an appropriate way, but it works
-#     	coord[:,0] = msz[0]-coord[:,0]
-    	
-    	###############################
-    	fig = plt.figure(figsize=(msz[1]/5,msz[0]/5))
-    	ax = fig.add_subplot(111)
-    	ax.xaxis.set_ticks([i for i in range(0,msz[1])])
-    	ax.yaxis.set_ticks([i for i in range(0,msz[0])])
-    	ax.xaxis.set_ticklabels([])
-    	ax.yaxis.set_ticklabels([])
-    	ax.grid(True,linestyle='-', linewidth=.5)
-    	a = plt.hist2d(coord[:,1], coord[:,0], bins=(msz[1],msz[0]),alpha=.0,cmap=cm.jet)
-    	# clbar  = plt.colorbar()
-    	x = np.arange(.5,msz[1]+.5,1)
-    	y = np.arange(.5,msz[0]+.5,1)
-    	X, Y = np.meshgrid(x, y)
-    	area = a[0].T*12
-    	
-    	# plt.scatter(coord[:,1]+.5, msz[0]-.5-coord[:,0], s=area, alpha=0.9,c='None',marker='o',cmap='jet',linewidths=3, edgecolor = 'r')
-#     	plt.scatter(coord[:,1]+.5, msz[0]-.5-coord[:,0], s=area, alpha=0.2,c='b',marker='o',cmap='jet',linewidths=3, edgecolor = 'r')
-    	coord = self.ind_to_xy(np.arange(self.nnodes))
-        plt.scatter(coord[:,1], msz[0]-.5- coord[:,0], s=area.flatten(), alpha=.9,c='None',marker='o',cmap='jet',linewidths=3, edgecolor = 'r')
-    	plt.xlim(0,msz[1])
-    	plt.ylim(0,msz[0])
+        #First Step: show the hitmap of all the training data
 
-    	if data != None:
-    		proj = self.project_data(data)
-    		msz =  getattr(self, 'mapsize')
-    		coord_d = self.ind_to_xy(proj)
-    		a = plt.hist2d(coord_d[:,1], coord_d[:,0], bins=(msz[1],msz[0]),alpha=.0,norm = LogNorm(),cmap=cm.jet)
-    		# clbar  = plt.colorbar()
-    		x = np.arange(.5,msz[1]+.5,1)
-    		y = np.arange(.5,msz[0]+.5,1)
-    		X, Y = np.meshgrid(x, y)
-    		
-    		area = a[0].T*50
-    		
-    		plt.scatter(coord_d[:,1]+.5, msz[0]-.5-coord_d[:,0], s=area, alpha=0.9,c='None',marker='o',cmap='jet',linewidths=3, edgecolor = 'r')
-    		plt.scatter(coord_d[:,1]+.5, msz[0]-.5-coord_d[:,0], s=area, alpha=0.2,c='b',marker='o',cmap='jet',linewidths=3, edgecolor = 'r')
-    		print 'hi'
+#     	print 'None'
+        data_tr = getattr(self, 'data_raw')
+        proj = self.project_data(data_tr)
+        msz =  getattr(self, 'mapsize')
+        coord = self.ind_to_xy(proj)
+
+        #this is not an appropriate way, but it works
+#     	coord[:,0] = msz[0]-coord[:,0]
+
+        ###############################
+        fig = plt.figure(figsize=(msz[1]/5,msz[0]/5))
+        ax = fig.add_subplot(111)
+        ax.xaxis.set_ticks([i for i in range(0,msz[1])])
+        ax.yaxis.set_ticks([i for i in range(0,msz[0])])
+        ax.xaxis.set_ticklabels([])
+        ax.yaxis.set_ticklabels([])
+        ax.grid(True,linestyle='-', linewidth=.5)
+        a = plt.hist2d(coord[:,1], coord[:,0], bins=(msz[1],msz[0]),alpha=.0,cmap=cm.jet)
+        # clbar  = plt.colorbar()
+        x = np.arange(.5,msz[1]+.5,1)
+        y = np.arange(.5,msz[0]+.5,1)
+        X, Y = np.meshgrid(x, y)
+        area = a[0].T*12
+
+        # plt.scatter(coord[:,1]+.5, msz[0]-.5-coord[:,0], s=area, alpha=0.9,c='None',marker='o',cmap='jet',linewidths=3, edgecolor = 'r')
+#     	plt.scatter(coord[:,1]+.5, msz[0]-.5-coord[:,0], s=area, alpha=0.2,c='b',marker='o',cmap='jet',linewidths=3, edgecolor = 'r')
+        coord = self.ind_to_xy(np.arange(self.nnodes))
+        plt.scatter(coord[:,1], msz[0]-.5- coord[:,0], s=area.flatten(), alpha=.9,c='None',marker='o',cmap='jet',linewidths=3, edgecolor = 'r')
+        plt.xlim(0,msz[1])
+        plt.ylim(0,msz[0])
+
+        if data != None:
+            proj = self.project_data(data)
+            msz =  getattr(self, 'mapsize')
+            coord_d = self.ind_to_xy(proj)
+            a = plt.hist2d(coord_d[:,1], coord_d[:,0], bins=(msz[1],msz[0]),alpha=.0,norm = LogNorm(),cmap=cm.jet)
+            # clbar  = plt.colorbar()
+            x = np.arange(.5,msz[1]+.5,1)
+            y = np.arange(.5,msz[0]+.5,1)
+            X, Y = np.meshgrid(x, y)
+
+            area = a[0].T*50
+
+            plt.scatter(coord_d[:,1]+.5, msz[0]-.5-coord_d[:,0], s=area, alpha=0.9,c='None',marker='o',cmap='jet',linewidths=3, edgecolor = 'r')
+            plt.scatter(coord_d[:,1]+.5, msz[0]-.5-coord_d[:,0], s=area, alpha=0.2,c='b',marker='o',cmap='jet',linewidths=3, edgecolor = 'r')
+            print 'hi'
 #     		plt.scatter(coord[:,1], msz[0]-1-coord[:,0], s=area, alpha=0.2,c='b',marker='o',cmap='jet',linewidths=3, edgecolor = 'r')
 #     		plt.scatter(X, msz[0]-1-Y, s=area, alpha=0.2,c='b',marker='o',cmap='jet',linewidths=3, edgecolor = 'r')# 
 #     		plt.scatter(X, msz[0]-1-Y, s=area, alpha=0.9,c='None',marker='o',cmap='jet',linewidths=3, edgecolor = 'r')    		
-    		plt.xlim(0,msz[1])
-    		plt.ylim(0,msz[0])
-    	
-    	
-    	plt.show()
-    
+            plt.xlim(0,msz[1])
+            plt.ylim(0,msz[0])
+
+
+        plt.show()
+
     def U_matrix(self,distance=1,row_normalized='Yes'):
-    	import scipy
-    	UD2 = self.UD2
-    	Umatrix = np.zeros((self.nnodes,1))
-    	if row_normalized=='Yes':
-        	vector = normalize_by(self.codebook.T, self.codebook.T, method='var').T
-        	
-    	else:
-        	vector = self.codebook
-    	for i in range(self.nnodes):
-        	codebook_i = vector[i][np.newaxis,:]
-        	neighbor_ind = UD2[i][0:]<=distance
-        	neighbor_codebooks = vector[neighbor_ind]
-        	Umatrix[i]  = scipy.spatial.distance_matrix(codebook_i,neighbor_codebooks).mean()
-    	return Umatrix.reshape(self.mapsize)
+        import scipy
+        UD2 = self.UD2
+        Umatrix = np.zeros((self.nnodes,1))
+        if row_normalized=='Yes':
+            vector = normalize_by(self.codebook.T, self.codebook.T, method='var').T
+
+        else:
+            vector = self.codebook
+        for i in range(self.nnodes):
+            codebook_i = vector[i][np.newaxis,:]
+            neighborbor_ind = UD2[i][0:]<=distance
+            neighborbor_codebooks = vector[neighborbor_ind]
+            Umatrix[i]  = scipy.spatial.distance_matrix(codebook_i,neighborbor_codebooks).mean()
+        return Umatrix.reshape(self.mapsize)
 
     def view_U_matrix(self,distance2=1,row_normalized='No',show_data='Yes',contooor='Yes',blob = 'No',save='No',save_dir = ''):
-    	import scipy
-    	from pylab import meshgrid,cm,imshow,contour,clabel,colorbar,axis,title,show
-    	umat = self.U_matrix(distance=distance2,row_normalized=row_normalized) 
-    	data = getattr(self, 'data_raw')
-    	proj = self.project_data(data)
-    	msz =  getattr(self, 'mapsize')
-    	coord = self.ind_to_xy(proj)
-	#     freq = plt.hist2d(coord[:,1], coord[:,0], bins=(msz[1],msz[0]),alpha=1.0,cmap=cm.jet)[0]
-	#     plt.close()
-   	 
-	#     fig, ax = plt.figure()
-    	fig, ax= plt.subplots(1, 1)
-    	im = imshow(umat,cmap=cm.RdYlBu_r,alpha=1) # drawing the function
-    	# adding the Contour lines with labels`
-    	# imshow(freq[0].T,cmap=cm.jet_r,alpha=1)
-    	if contooor=='Yes':
-        	mn = np.min(umat.flatten())
-        	mx = np.max(umat.flatten())
-        	std = np.std(umat.flatten())
-        	md = np.median(umat.flatten())
-        	mx = md + 0*std
+        import scipy
+        from pylab import meshgrid,cm,imshow,contour,clabel,colorbar,axis,title,show
+        umat = self.U_matrix(distance=distance2,row_normalized=row_normalized)
+        data = getattr(self, 'data_raw')
+        proj = self.project_data(data)
+        msz =  getattr(self, 'mapsize')
+        coord = self.ind_to_xy(proj)
+    #     freq = plt.hist2d(coord[:,1], coord[:,0], bins=(msz[1],msz[0]),alpha=1.0,cmap=cm.jet)[0]
+    #     plt.close()
+
+    #     fig, ax = plt.figure()
+        fig, ax= plt.subplots(1, 1)
+        im = imshow(umat,cmap=cm.RdYlBu_r,alpha=1) # drawing the function
+        # adding the Contour lines with labels`
+        # imshow(freq[0].T,cmap=cm.jet_r,alpha=1)
+        if contooor=='Yes':
+            mn = np.min(umat.flatten())
+            mx = np.max(umat.flatten())
+            std = np.std(umat.flatten())
+            md = np.median(umat.flatten())
+            mx = md + 0*std
 #         	mn = md
 #         	umat[umat<=mn]=mn
-        	cset = contour(umat,np.linspace(mn,mx,15),linewidths=0.7,cmap=cm.Blues)
-    
-    	if show_data=='Yes':
-        	plt.scatter(coord[:,1], coord[:,0], s=2, alpha=1.,c='Gray',marker='o',cmap='jet',linewidths=3, edgecolor = 'Gray')
-        	plt.axis('off')
-    
-    	ratio = float(msz[0])/(msz[0]+msz[1])
-    	fig.set_size_inches((1-ratio)*15,ratio*15)
-    	plt.tight_layout()
-    	plt.subplots_adjust(hspace = .00,wspace=.000)
-    	sel_points = list()
-    	if blob=='Yes':
-        	from skimage.feature import blob_dog, blob_log, blob_doh
-        	from math import sqrt
-        	from skimage.color import rgb2gray
-        	image = 1/umat
-        	image_gray = rgb2gray(image)
+            cset = contour(umat,np.linspace(mn,mx,15),linewidths=0.7,cmap=cm.Blues)
 
-        	#'Laplacian of Gaussian'
-        	blobs = blob_log(image, max_sigma=5, num_sigma=4, threshold=.152)
-        	blobs[:, 2] = blobs[:, 2] * sqrt(2)
-        	imshow(umat,cmap=cm.RdYlBu_r,alpha=1)
-        	sel_points = list()
-        	for blob in blobs:
-        		row, col, r = blob
-        		c = plt.Circle((col, row), r, color='red', linewidth=2, fill=False)
-        		ax.add_patch(c)
-        		dist = scipy.spatial.distance_matrix(coord[:,:2],np.array([row,col])[np.newaxis,:])
-        		sel_point = dist <= r
-        		plt.plot(coord[:,1][sel_point[:,0]], coord[:,0][sel_point[:,0]],'.r')
-        		sel_points.append(sel_point[:,0])
+        if show_data=='Yes':
+            plt.scatter(coord[:,1], coord[:,0], s=2, alpha=1.,c='Gray',marker='o',cmap='jet',linewidths=3, edgecolor = 'Gray')
+            plt.axis('off')
 
-            
+        ratio = float(msz[0])/(msz[0]+msz[1])
+        fig.set_size_inches((1-ratio)*15,ratio*15)
+        plt.tight_layout()
+        plt.subplots_adjust(hspace = .00,wspace=.000)
+        sel_points = list()
+        if blob=='Yes':
+            from skimage.feature import blob_dog, blob_log, blob_doh
+            from math import sqrt
+            from skimage.color import rgb2gray
+            image = 1/umat
+            image_gray = rgb2gray(image)
+
+            #'Laplacian of Gaussian'
+            blobs = blob_log(image, max_sigma=5, num_sigma=4, threshold=.152)
+            blobs[:, 2] = blobs[:, 2] * sqrt(2)
+            imshow(umat,cmap=cm.RdYlBu_r,alpha=1)
+            sel_points = list()
+            for blob in blobs:
+                row, col, r = blob
+                c = plt.Circle((col, row), r, color='red', linewidth=2, fill=False)
+                ax.add_patch(c)
+                dist = scipy.spatial.distance_matrix(coord[:,:2],np.array([row,col])[np.newaxis,:])
+                sel_point = dist <= r
+                plt.plot(coord[:,1][sel_point[:,0]], coord[:,0][sel_point[:,0]],'.r')
+                sel_points.append(sel_point[:,0])
+
+
         if save=='Yes':
-        	fig.savefig(save_dir, transparent=False, dpi=400) 
+            fig.savefig(save_dir, transparent=False, dpi=400)
         return sel_points,umat
 
-    
-    
-    
-    
+
+
+
+
     def hit_map_cluster_number(self,data=None):
-    	if hasattr(self, 'cluster_labels'):
-    		codebook = getattr(self, 'cluster_labels')
+        if hasattr(self, 'cluster_labels'):
+            codebook = getattr(self, 'cluster_labels')
 #     		print 'yesyy'
-    	else:
-    		print 'clustering based on default parameters...'
-    		codebook = self.cluster()
-    	msz =  getattr(self, 'mapsize')
-    	fig = plt.figure(figsize=(msz[1]/2.5,msz[0]/2.5))
-    	ax = fig.add_subplot(111)
+        else:
+            print 'clustering based on default parameters...'
+            codebook = self.cluster()
+        msz =  getattr(self, 'mapsize')
+        fig = plt.figure(figsize=(msz[1]/2.5,msz[0]/2.5))
+        ax = fig.add_subplot(111)
 #     	ax.xaxis.set_ticklabels([])
 #     	ax.yaxis.set_ticklabels([])
 #     	ax.grid(True,linestyle='-', linewidth=.5)
 
-    	
-    	if data == None:
-    		data_tr = getattr(self, 'data_raw')
-    		proj = self.project_data(data_tr)
-    		coord = self.ind_to_xy(proj)
-    		cents = self.ind_to_xy(np.arange(0,msz[0]*msz[1]))
-	    	for i, txt in enumerate(codebook):
-		    		ax.annotate(txt, (cents[i,1],cents[i,0]),size=10, va="center")
-    	
-    	if data != None:
-    		proj = self.project_data(data)
-    		coord = self.ind_to_xy(proj)
-    		x = np.arange(.5,msz[1]+.5,1)
-    		y = np.arange(.5,msz[0]+.5,1)
-    		cents = self.ind_to_xy(proj)
+
+        if data == None:
+            data_tr = getattr(self, 'data_raw')
+            proj = self.project_data(data_tr)
+            coord = self.ind_to_xy(proj)
+            cents = self.ind_to_xy(np.arange(0,msz[0]*msz[1]))
+            for i, txt in enumerate(codebook):
+                    ax.annotate(txt, (cents[i,1],cents[i,0]),size=10, va="center")
+
+        if data != None:
+            proj = self.project_data(data)
+            coord = self.ind_to_xy(proj)
+            x = np.arange(.5,msz[1]+.5,1)
+            y = np.arange(.5,msz[0]+.5,1)
+            cents = self.ind_to_xy(proj)
 #     		cents[:,1] = cents[:,1]+.2
 #     		print cents.shape
-    		label = codebook[proj]
-    		for i, txt in enumerate(label):
-	    		ax.annotate(txt, (cents[i,1],cents[i,0]),size=10, va="center")
-    	
-    	
-    	
-    	plt.imshow(codebook.reshape(msz[0],msz[1])[::],alpha=.5)
+            label = codebook[proj]
+            for i, txt in enumerate(label):
+                ax.annotate(txt, (cents[i,1],cents[i,0]),size=10, va="center")
+
+
+
+        plt.imshow(codebook.reshape(msz[0],msz[1])[::],alpha=.5)
 #     	plt.pcolor(codebook.reshape(msz[0],msz[1])[::-1],alpha=.5,cmap='jet')
-    	plt.show()
-    	return cents
-    
+        plt.show()
+        return cents
+
     def view_map_dot(self,which_dim='all',colormap=None,cols=None,save='No',save_dir='',text_size=8):
-		import matplotlib.cm as cm
-		if colormap==None:
-			colormap = plt.cm.get_cmap('RdYlBu_r')
-		else:
-			colormap = plt.cm.get_cmap(colormap)
-		data = self.data_raw
-		msz0, msz1 = getattr(self, 'mapsize')
-		proj = self.project_data(data)
-		coords = self.ind_to_xy(proj)[:,:2]   
-		fig = plt.figure()
-		if cols==None:
-			cols=8
-		rows = data.shape[1]/cols+1
-		if which_dim == 'all':
-			dim = data.shape[0]
-			rows = len(which_dim)/cols+1
-			no_row_in_plot = dim/cols + 1 #6 is arbitrarily selected
-			if no_row_in_plot <=1:
-				no_col_in_plot = dim
-			else:
-				no_col_in_plot = cols
-			h = .1
-			w= .1
-			fig = plt.figure(figsize=(no_col_in_plot*2.5*(1+w),no_row_in_plot*2.5*(1+h)))
-			for i in range(data.shape[1]):
-				plt.subplot(rows,cols,i+1)
-				
-				#this uses the colors uniquely for each record, while in normal views, it is based on the values within each dimensions.
-				#This is important when we are dealing with time series. Where we don't want to normalize colors within each time period, rather we like to see th
-				#the patterns of each data records in time.
-				mn = np.min(data[:,:],axis=1)
-				mx = np.max(data[:,:],axis=1)
+        import matplotlib.cm as cm
+        if colormap==None:
+            colormap = plt.cm.get_cmap('RdYlBu_r')
+        else:
+            colormap = plt.cm.get_cmap(colormap)
+        data = self.data_raw
+        msz0, msz1 = getattr(self, 'mapsize')
+        proj = self.project_data(data)
+        coords = self.ind_to_xy(proj)[:,:2]
+        fig = plt.figure()
+        if cols==None:
+            cols=8
+        rows = data.shape[1]/cols+1
+        if which_dim == 'all':
+            dim = data.shape[0]
+            rows = len(which_dim)/cols+1
+            no_row_in_plot = dim/cols + 1 #6 is arbitrarily selected
+            if no_row_in_plot <=1:
+                no_col_in_plot = dim
+            else:
+                no_col_in_plot = cols
+            h = .1
+            w= .1
+            fig = plt.figure(figsize=(no_col_in_plot*2.5*(1+w),no_row_in_plot*2.5*(1+h)))
+            for i in range(data.shape[1]):
+                plt.subplot(rows,cols,i+1)
+
+                #this uses the colors uniquely for each record, while in normal views, it is based on the values within each dimensions.
+                #This is important when we are dealing with time series. Where we don't want to normalize colors within each time period, rather we like to see th
+                #the patterns of each data records in time.
+                mn = np.min(data[:,:],axis=1)
+                mx = np.max(data[:,:],axis=1)
 # 				print mx.shape
 # 				print coords.shape
-				for j in range(data.shape[0]):
-					sc = plt.scatter(coords[j,1],self.mapsize[0]-1-coords[j,0],c=data[j,which_dim[i]],vmax=mx[j],vmin=mn[j],s=90,marker='.',edgecolor='None', cmap=colormap ,alpha=1)
+                for j in range(data.shape[0]):
+                    sc = plt.scatter(coords[j,1],self.mapsize[0]-1-coords[j,0],c=data[j,which_dim[i]],vmax=mx[j],vmin=mn[j],s=90,marker='.',edgecolor='None', cmap=colormap ,alpha=1)
 
-				
-				
-				mn = dat# a[:,i].min()
+
+
+                mn = dat# a[:,i].min()
 # 				mx = data[:,i].max()
 # 				plt.scatter(coords[:,1],self.mapsize[0]-1-coords[:,0],c=data[:,i],vmax=mx,vmin=mn,s=180,marker='.',edgecolor='None', cmap=colormap ,alpha=1)
-				
-				
-				
-				
-				
-				eps = .0075
-				plt.xlim(0-eps,self.mapsize[1]-1+eps)
-				plt.ylim(0-eps,self.mapsize[0]-1+eps)
-				plt.axis('off')
-				plt.title(self.compname[0][i])
-				font = {'size'   : text_size}
-				plt.rc('font', **font)
-				plt.axis('on')
-				plt.xticks([])
-				plt.yticks([])
-		else:
-			dim = len(which_dim)
-			rows = len(which_dim)/cols+1
-			no_row_in_plot = dim/cols + 1 #6 is arbitrarily selected
-			if no_row_in_plot <=1:
-				no_col_in_plot = dim
-			else:
-				no_col_in_plot = cols
-			h = .1
-			w= .1
-			fig = plt.figure(figsize=(no_col_in_plot*2.5*(1+w),no_row_in_plot*2.5*(1+h)))	
-			for i in range(len(which_dim)):
-				plt.subplot(rows,cols,i+1)
-				mn = np.min(data[:,:],axis=1)
-				mx = np.max(data[:,:],axis=1)
+
+
+
+
+
+                eps = .0075
+                plt.xlim(0-eps,self.mapsize[1]-1+eps)
+                plt.ylim(0-eps,self.mapsize[0]-1+eps)
+                plt.axis('off')
+                plt.title(self.compname[0][i])
+                font = {'size'   : text_size}
+                plt.rc('font', **font)
+                plt.axis('on')
+                plt.xticks([])
+                plt.yticks([])
+        else:
+            dim = len(which_dim)
+            rows = len(which_dim)/cols+1
+            no_row_in_plot = dim/cols + 1 #6 is arbitrarily selected
+            if no_row_in_plot <=1:
+                no_col_in_plot = dim
+            else:
+                no_col_in_plot = cols
+            h = .1
+            w= .1
+            fig = plt.figure(figsize=(no_col_in_plot*2.5*(1+w),no_row_in_plot*2.5*(1+h)))
+            for i in range(len(which_dim)):
+                plt.subplot(rows,cols,i+1)
+                mn = np.min(data[:,:],axis=1)
+                mx = np.max(data[:,:],axis=1)
 # 				print mx.shape
 # 				print coords.shape
-				for j in range(data.shape[0]):
-					sc = plt.scatter(coords[j,1],self.mapsize[0]-1-coords[j,0],c=data[j,which_dim[i]],vmax=mx[j],vmin=mn[j],s=90,marker='.',edgecolor='None', cmap=colormap ,alpha=1)
+                for j in range(data.shape[0]):
+                    sc = plt.scatter(coords[j,1],self.mapsize[0]-1-coords[j,0],c=data[j,which_dim[i]],vmax=mx[j],vmin=mn[j],s=90,marker='.',edgecolor='None', cmap=colormap ,alpha=1)
 
-				
-				
-				
+
+
+
 # 				mn = data[:,which_dim[i]].min()
 # 				mx = data[:,which_dim[i]].max()
 # 				plt.scatter(coords[:,1],self.mapsize[0]-1-coords[:,0],c=data[:,which_dim[i]],vmax=mx,vmin=mn,s=180,marker='.',edgecolor='None', cmap=colormap ,alpha=1)
-				
-				
-				
-				
-				eps = .0075
-				plt.xlim(0-eps,self.mapsize[1]-1+eps)
-				plt.ylim(0-eps,self.mapsize[0]-1+eps)
-				plt.axis('off')
-				plt.title(self.compname[0][which_dim[i]])
-				font = {'size'   : text_size}
-				plt.rc('font', **font)
-				plt.axis('on')
-				plt.xticks([])
-				plt.yticks([])
-		 
-		plt.tight_layout()
-		# 		plt.colorbar(sc,ticks=np.round(np.linspace(mn,mx,5),decimals=1),shrink=0.6)
-		plt.subplots_adjust(hspace = .16,wspace=.05)
+
+
+
+
+                eps = .0075
+                plt.xlim(0-eps,self.mapsize[1]-1+eps)
+                plt.ylim(0-eps,self.mapsize[0]-1+eps)
+                plt.axis('off')
+                plt.title(self.compname[0][which_dim[i]])
+                font = {'size'   : text_size}
+                plt.rc('font', **font)
+                plt.axis('on')
+                plt.xticks([])
+                plt.yticks([])
+
+        plt.tight_layout()
+        # 		plt.colorbar(sc,ticks=np.round(np.linspace(mn,mx,5),decimals=1),shrink=0.6)
+        plt.subplots_adjust(hspace = .16,wspace=.05)
 # 		fig.set_size_inches(msz0/2,msz1/2)
 # 		fig = plt.figure(figsize=(msz0/2,msz1/2))
-		if save=='Yes':
-			if save_dir != 'empty':
-				fig.savefig(save_dir, transparent=False, dpi=200) 
-			else:
-				add = '/Users/itadmin/Desktop/SOM_dot.png'
-				print 'save directory: ', add
-				fig.savefig(add, transparent=False, dpi=200)
-			
-			plt.close(fig)    
+        if save=='Yes':
+            if save_dir != 'empty':
+                fig.savefig(save_dir, transparent=False, dpi=200)
+            else:
+                add = '/Users/itadmin/Desktop/SOM_dot.png'
+                print 'save directory: ', add
+                fig.savefig(add, transparent=False, dpi=200)
 
-    
-    
+            plt.close(fig)
+
+
+
     def predict_Probability(self, data, Target, K =5):
         # here it is assumed that Target is the last column in the codebook #and data has dim-1 columns
         codebook = getattr(self, 'codebook')
@@ -668,8 +660,8 @@ class SOM(object):
         indX = ind[ind != Target]
         X = codebook[:,indX]
         Y = codebook[:,Target]
-        n_neighbors = K
-        clf = neighbors.KNeighborsRegressor(n_neighbors, weights = 'distance')
+        n_neighborbors = K
+        clf = neighborbors.KNeighborsRegressor(n_neighborbors, weights = 'distance')
         clf.fit(X, Y)
         # the codebook values are all normalized
         #we can normalize the input data based on mean and std of original data
@@ -681,62 +673,62 @@ class SOM(object):
         elif dimdata == dim -1:          
             data = normalize_by(data_raw[:,indX], data, method='var')       
             #data = normalize(data, method='var')
-        weights,ind= clf.kneighbors(data, n_neighbors=K, return_distance=True)    
+        weights,ind= clf.kneighborbors(data, n_neighborbors=K, return_distance=True)    
         weights = 1./weights
         sum_ = np.sum(weights,axis=1)
         weights = weights/sum_[:,np.newaxis]
         labels = np.sign(codebook[ind,Target])
         labels[labels>=0]=1
-        
+
         #for positives
         pos_prob = labels.copy()
         pos_prob[pos_prob<0]=0
         pos_prob = pos_prob*weights
         pos_prob = np.sum(pos_prob,axis=1)[:,np.newaxis]
-        
+
         #for negatives
         neg_prob = labels.copy()
         neg_prob[neg_prob>0]=0
         neg_prob = neg_prob*weights*-1
         neg_prob = np.sum(neg_prob,axis=1)[:,np.newaxis]
-        
+
         #Predicted_values = clf.predict(data)
         #Predicted_values = denormalize_by(data_raw[:,Target], Predicted_values)
         return np.concatenate((pos_prob,neg_prob),axis=1)
-        
-        
+
+
     def node_Activation(self, data, wt= 'distance',Target = None):
         """
-    	‘uniform’
-    	"""
-        
+        ‘uniform’
+        """
+
         if Target == None:
-        	codebook = getattr(self, 'codebook')
-        	data_raw = getattr(self,'data_raw')
-        	clf = neighbors.KNeighborsClassifier(n_neighbors = getattr(self, 'nnodes'))
-        	labels = np.arange(0,codebook.shape[0])
-        	clf.fit(codebook, labels)
-	    	# the codebook values are all normalized
-    		#we can normalize the input data based on mean and std of original data
-        	data = normalize_by(data_raw, data, method='var')
-        	weights,ind= clf.kneighbors(data)    
-        	
-        	
-        	
-        	##Softmax function 
-         	weights = 1./weights
+            codebook = getattr(self, 'codebook')
+            data_raw = getattr(self,'data_raw')
+            clf = neighborbors.KNeighborsClassifier(n_neighborbors = getattr(self, 'nnodes'))
+            labels = np.arange(0,codebook.shape[0])
+            clf.fit(codebook, labels)
+            # the codebook values are all normalized
+            #we can normalize the input data based on mean and std of original data
+            data = normalize_by(data_raw, data, method='var')
+            weights,ind= clf.kneighborbors(data)
+
+
+
+            ##Softmax function
+            weights = 1./weights
 #          	S_  = np.sum(np.exp(weights),axis=1)[:,np.newaxis]
 #          	weights = np.exp(weights)/S_
-         	
-        	
-        	
+
+
+
         return weights , ind	
-        	
-        	
-        
+
+
+
         # 
-    
-    
+
+
     def para_bmu_find(self, x, y, njb = 1):
         dlen = x.shape[0]
         Y2 = None
@@ -748,14 +740,14 @@ class SOM(object):
         b  = Parallel(n_jobs=njb, pre_dispatch='3*n_jobs')(delayed(chunk_based_bmu_find)\
         (self, x[i*dlen // njb:min((i+1)*dlen // njb, dlen)],y, Y2) \
         for i in xrange(njb))
-        
+
         #print 'bmu finding: %f seconds ' %round(time() - t_temp, 3)
         t1 = time()
         bmu = np.asarray(list(itertools.chain(*b))).T
         #print 'bmu to array: %f seconds' %round(time() - t1, 3)
         del b
         return bmu
-    
+
     #First finds the Voronoi set of each node. It needs to calculate a smaller matrix. Super fast comparing to classic batch training algorithm
     # it is based on the implemented algorithm in som toolbox for Matlab by Helsinky university
     def update_codebook_voronoi(self, training_data, bmu, H, radius):
@@ -777,7 +769,7 @@ class SOM(object):
         S = P.dot(training_data)
         #assert( S.shape == (nnodes, dim))
         #assert( H.shape == (nnodes, nnodes))
-        
+
         # H has nnodes*nnodes and S has nnodes*dim  ---> Nominator has nnodes*dim
         #print Nom
         Nom = np.empty((nnodes,nnodes))
@@ -802,7 +794,7 @@ class SOM(object):
         #assert (New_Codebook.shape == (nnodes,dim))
         #setattr(som, 'codebook', New_Codebook)
         return np.around(New_Codebook, decimals = 6)    
-                        
+
 # we will call this function in parallel for different number of jobs
 def chunk_based_bmu_find(self, x, y, Y2):
     dim = x.shape[1]
@@ -828,7 +820,7 @@ def chunk_based_bmu_find(self, x, y, Y2):
         del ddata
         d = None
     return bmu
-    
+
 #Batch training which is called for rought training as well as finetuning
 def batchtrain(self, njob = 1, phase = None, shared_memory = 'no', verbose='on'):
     t0 = time()
@@ -836,17 +828,17 @@ def batchtrain(self, njob = 1, phase = None, shared_memory = 'no', verbose='on')
     dlen = getattr(self, 'dlen')
     dim = getattr(self, 'dim')
     mapsize = getattr(self, 'mapsize')
-    
+
 
     #############################################
     # seting the parameters
-    initmethod = getattr(self,'initmethod')
+    initialization = getattr(self,'initialization')
     mn = np.min(mapsize)
     if mn == 1:
         mpd = float(nnodes*10)/float(dlen)
     else:
         mpd = float(nnodes)/float(dlen)
-    
+
     ms = max(mapsize[0],mapsize[1])
     if mn == 1:
         ms = ms/2.
@@ -858,42 +850,42 @@ def batchtrain(self, njob = 1, phase = None, shared_memory = 'no', verbose='on')
         #training length
         trainlen = int(np.ceil(30*mpd))
         #radius for updating
-        if initmethod == 'random':
-        	radiusin = max(1, np.ceil(ms/3.))
-        	radiusfin = max(1, radiusin/6.)
+        if initialization == 'random':
+            radiusin = max(1, np.ceil(ms/3.))
+            radiusfin = max(1, radiusin/6.)
 #         	radiusin = max(1, np.ceil(ms/1.))
 #         	radiusfin = max(1, radiusin/2.)
-        elif initmethod == 'pca':
+        elif initialization == 'pca':
             radiusin = max(1, np.ceil(ms/8.))
             radiusfin = max(1, radiusin/4.)
     elif phase == 'finetune':
         #train lening length
-        
+
         #radius for updating
-        if initmethod == 'random':
+        if initialization == 'random':
             trainlen = int(np.ceil(50*mpd))
             radiusin = max(1, ms/12.) #from radius fin in rough training  
             radiusfin = max(1, radiusin/25.)
-            
+
 #             radiusin = max(1, ms/2.) #from radius fin in rough training  
 #             radiusfin = max(1, radiusin/2.)
-        elif initmethod == 'pca':
-        	trainlen = int(np.ceil(40*mpd))
-        	radiusin = max(1, np.ceil(ms/8.)/4)
-        	radiusfin = 1#max(1, ms/128)        
-    
+        elif initialization == 'pca':
+            trainlen = int(np.ceil(40*mpd))
+            radiusin = max(1, np.ceil(ms/8.)/4)
+            radiusfin = 1#max(1, ms/128)
+
     radius = np.linspace(radiusin, radiusfin, trainlen)
     ##################################################    
-    
+
     UD2 = getattr(self, 'UD2')
     New_Codebook_V = np.empty((nnodes, dim))
     New_Codebook_V = getattr(self, 'codebook')
-    
+
     #print 'data is in shared memory?', shared_memory
     if shared_memory == 'yes':
         data = getattr(self, 'data')
-        Data_folder = tempfile.mkdtemp()
-        data_name = os.path.join(Data_folder, 'data')
+        data_folder = tempfile.mkdtemp()
+        data_name = os.path.join(data_folder, 'data')
         dump(data, data_name)
         data = load(data_name, mmap_mode='r')
     else:
@@ -904,18 +896,18 @@ def batchtrain(self, njob = 1, phase = None, shared_memory = 'no', verbose='on')
     if verbose=='on':
         print '%s training...' %phase
         print 'radius_ini: %f , radius_final: %f, trainlen: %d' %(radiusin, radiusfin, trainlen)
-    neigh_func = getattr(self,'neigh')
+    neighbor_func = getattr(self,'neighbor')
     for i in range(trainlen):
-    	if neigh_func == 'Guassian':
-        	#in case of Guassian neighborhood
-        	H = np.exp(-1.0*UD2/(2.0*radius[i]**2)).reshape(nnodes, nnodes)
-        if neigh_func == 'Bubble':
-        	# in case of Bubble function
+        if neighbor_func == 'Guassian':
+            #in case of Guassian neighborborhood
+            H = np.exp(-1.0*UD2/(2.0*radius[i]**2)).reshape(nnodes, nnodes)
+        if neighbor_func == 'Bubble':
+            # in case of Bubble function
 #         	print radius[i], UD2.shape
 #         	print UD2
-        	H = l(radius[i],np.sqrt(UD2.flatten())).reshape(nnodes, nnodes) + .000000000001
+            H = l(radius[i],np.sqrt(UD2.flatten())).reshape(nnodes, nnodes) + .000000000001
 #         	print H
-        
+
         t1 = time()
         bmu = None
         bmu = self.para_bmu_find(data, New_Codebook_V, njb = njob)
@@ -930,7 +922,7 @@ def batchtrain(self, njob = 1, phase = None, shared_memory = 'no', verbose='on')
     setattr(self, 'codebook', New_Codebook_V)
     bmu[1] = np.sqrt(bmu[1] + X2)
     setattr(self, 'bmu', bmu)
-    
+
 
 def grid_dist(self,bmu_ind):
     """
@@ -945,7 +937,7 @@ def grid_dist(self,bmu_ind):
     except:
         lattice = 'hexa'
         print 'lattice not found! Lattice as hexa was set'
-   
+
     if lattice == 'rect':
         return rect_dist(self,bmu_ind)
     elif lattice == 'hexa':
@@ -957,7 +949,7 @@ def grid_dist(self,bmu_ind):
             rows = 0.
             cols = 0.
             pass 
-       
+
         #needs to be implemented
         print 'to be implemented' , rows , cols
         return np.zeros((rows,cols))
@@ -972,14 +964,14 @@ def rect_dist(self,bmu):
         cols = msize[1]
     except:
         pass 
-        
+
     #bmu should be an integer between 0 to no_nodes
     if 0<=bmu<=(rows*cols):
         c_bmu = int(bmu%cols)
         r_bmu = int(bmu/cols)
     else:
       print 'wrong bmu'  
-      
+
     #calculating the grid distance
     if np.logical_and(rows>0 , cols>0): 
         r,c = np.arange(0, rows, 1)[:,np.newaxis] , np.arange(0,cols, 1)
@@ -988,10 +980,10 @@ def rect_dist(self,bmu):
     else:
         print 'please consider the above mentioned errors'
         return np.zeros((rows,cols)).ravel()
-        
-            
-            
-            
+
+
+
+
 def view_2d(self, text_size,which_dim='all', what = 'codebook'):
     msz0, msz1 = getattr(self, 'mapsize')
     if what == 'codebook':
@@ -1023,13 +1015,13 @@ def view_2d(self, text_size,which_dim='all', what = 'codebook'):
             indtoshow = np.asarray(which_dim).T
             sH, sV = 16,16*ratio*1
             plt.figure(figsize=(sH,sV))
-            
+
         no_row_in_plot = dim/6 + 1 #6 is arbitrarily selected
         if no_row_in_plot <=1:
             no_col_in_plot = dim
         else:
             no_col_in_plot = 6
-        
+
         axisNum = 0
         compname = getattr(self, 'compname')
         norm = matplotlib.colors.normalize(vmin = np.mean(codebook.flatten())-1*np.std(codebook.flatten()), vmax = np.mean(codebook.flatten())+1*np.std(codebook.flatten()), clip = True)
@@ -1055,7 +1047,7 @@ def view_2d_Pack(self, text_size,which_dim='all', what = 'codebook',save='No', g
     import matplotlib.cm as cm
     msz0, msz1 = getattr(self, 'mapsize')
     if CMAP=='None':
-    	CMAP= cm.RdYlBu_r
+        CMAP= cm.RdYlBu_r
 #     	CMAP = cm.jet
     if what == 'codebook':
         if hasattr(self, 'codebook'):
@@ -1086,14 +1078,14 @@ def view_2d_Pack(self, text_size,which_dim='all', what = 'codebook',save='No', g
             indtoshow = np.asarray(which_dim).T
             sH, sV = 16,16*ratio*1
 #             plt.figure(figsize=(sH,sV))
-            
+
 #         plt.figure(figsize=(7,7))
         no_row_in_plot = dim/col_sz + 1 #6 is arbitrarily selected
         if no_row_in_plot <=1:
             no_col_in_plot = dim
         else:
             no_col_in_plot = col_sz
-        
+
         axisNum = 0
         compname = getattr(self, 'compname')
         h = .1
@@ -1101,28 +1093,28 @@ def view_2d_Pack(self, text_size,which_dim='all', what = 'codebook',save='No', g
         fig = plt.figure(figsize=(no_col_in_plot*2.5*(1+w),no_row_in_plot*2.5*(1+h)))
 #         print no_row_in_plot, no_col_in_plot
         norm = matplotlib.colors.Normalize(vmin = np.median(codebook.flatten())-1.5*np.std(codebook.flatten()), vmax = np.median(codebook.flatten())+1.5*np.std(codebook.flatten()), clip = False)
-        
+
         DD = pd.Series(data = codebook.flatten()).describe(percentiles=[.03,.05,.1,.25,.3,.4,.5,.6,.7,.8,.9,.95,.97])
         norm = matplotlib.colors.Normalize(vmin = DD.ix['3%'], vmax = DD.ix['97%'], clip = False)
 
         while axisNum <dim:
             axisNum += 1
-            
+
             ax = fig.add_subplot(no_row_in_plot, no_col_in_plot, axisNum)
             ind = int(indtoshow[axisNum-1])
             mp = codebook[:,ind].reshape(msz0, msz1)
-            
+
             if grid=='Yes':
-            	pl = plt.pcolor(mp[::-1],cmap=CMAP)
+                pl = plt.pcolor(mp[::-1],cmap=CMAP)
             elif grid=='No':
-            	plt.imshow(mp[::-1],norm = None,cmap=CMAP)
+                plt.imshow(mp[::-1],norm = None,cmap=CMAP)
 #             	plt.pcolor(mp[::-1])
-            	plt.axis('off')
-            
+                plt.axis('off')
+
             if text=='Yes':
-            	plt.title(compname[0][ind])
-            	font = {'size'   : text_size}
-            	plt.rc('font', **font)
+                plt.title(compname[0][ind])
+                font = {'size'   : text_size}
+                plt.rc('font', **font)
             plt.axis([0, msz0, 0, msz1])
             ax.set_yticklabels([])
             ax.set_xticklabels([])
@@ -1136,25 +1128,25 @@ def view_2d_Pack(self, text_size,which_dim='all', what = 'codebook',save='No', g
 #         plt.tight_layout()
         plt.subplots_adjust(hspace = h,wspace=w)
     if what == 'cluster':
-    	if hasattr(self, 'cluster_labels'):
-    		codebook = getattr(self, 'cluster_labels')
-    	else:
-    		print 'clustering based on default parameters...'
-    		codebook = self.cluster()
+        if hasattr(self, 'cluster_labels'):
+            codebook = getattr(self, 'cluster_labels')
+        else:
+            print 'clustering based on default parameters...'
+            codebook = self.cluster()
         h = .2
         w= .001
         fig = plt.figure(figsize=(msz0/2,msz1/2))
-        
+
         ax = fig.add_subplot(1, 1, 1)
         mp = codebook[:].reshape(msz0, msz1)
         if grid=='Yes':
-        	plt.imshow(mp[::-1],cmap=CMAP)
+            plt.imshow(mp[::-1],cmap=CMAP)
 #         pl = plt.pcolor(mp[::-1],cmap=CMAP)
         elif grid=='No':
             plt.imshow(mp[::-1],cmap=CMAP)
 #             plt.pcolor(mp[::-1])
             plt.axis('off')
-            
+
         if text=='Yes':
             plt.title('clusters')
             font = {'size'   : text_size}
@@ -1171,16 +1163,16 @@ def view_2d_Pack(self, text_size,which_dim='all', what = 'codebook',save='No', g
 
 
     if save == 'Yes':
-        	
-        	if save_dir != 'empty':
+
+            if save_dir != 'empty':
 #         		print save_dir
-        		fig.savefig(save_dir,bbox_inches='tight', transparent=False, dpi=200) 
-        	else:
+                fig.savefig(save_dir,bbox_inches='tight', transparent=False, dpi=200)
+            else:
 #         		print save_dir
-        		add = '/Users/itadmin/Desktop/SOM.png'
-        		fig.savefig(add,bbox_inches='tight', transparent=False, dpi=200)    
-        	
-        	plt.close(fig)
+                add = '/Users/itadmin/Desktop/SOM.png'
+                fig.savefig(add,bbox_inches='tight', transparent=False, dpi=200)
+
+            plt.close(fig)
 
 
 
@@ -1217,13 +1209,13 @@ def view_1d(self, text_size, which_dim ='all', what = 'codebook'):
             indtoshow = np.asarray(which_dim).T
             sH, sV = 16,16*ratio*1
             plt.figure(figsize=(sH,sV))
-     
+
         no_row_in_plot = dim/6 + 1 #6 is arbitrarily selected
         if no_row_in_plot <=1:
             no_col_in_plot = dim
         else:
             no_col_in_plot = 6
-        
+
         axisNum = 0
         compname = getattr(self, 'compname')
         while axisNum < dim:
@@ -1243,9 +1235,9 @@ def view_1d(self, text_size, which_dim ='all', what = 'codebook'):
             #plt.colorbar(pl)
         plt.show()    
 
-	
-	
-	
+
+
+
 
 
 def lininit(self):
@@ -1259,12 +1251,12 @@ def lininit(self):
     # Further, we create a linear combination of them in the new map by giving values from -1 to 1 in each 
     #Direction of SOM map
     # it shoud be noted that here, X is the covariance matrix of original data
-    
+
     msize =  getattr(self, 'mapsize')
     rows = msize[0]
     cols = msize[1]
     nnodes = getattr(self, 'nnodes')
-    
+
     if np.min(msize)>1:
         coord = np.zeros((nnodes, 2))
         for i in range(0,nnodes):
@@ -1298,7 +1290,7 @@ def lininit(self):
         mx = np.max(coord, axis = 0)
         mn = np.min(coord, axis = 0)
         #print coord
-        
+
         coord = (coord - mn)/(mx-mn)
         coord = (coord - .5)*2
         #print coord
@@ -1313,7 +1305,7 @@ def lininit(self):
         eigval = pca.explained_variance_
         norms = np.sqrt(np.einsum('ij,ij->i', eigvec, eigvec))
         eigvec = ((eigvec.T/norms)*eigval).T; eigvec.shape
-        
+
         for j in range(nnodes):
             for i in range(eigvec.shape[0]):
                 codebook[j,:] = codebook[j, :] + coord[j,i]*eigvec[i,:]
@@ -1331,7 +1323,7 @@ def normalize(data, method='var'):
         st = np.std(data, axis = 0)
         n_data = (data-me)/st
         return n_data
-        
+
 def normalize_by(data_raw, data, method='var'):
     #methods  = ['var','range','log','logistic','histD','histC']
     #status = ['done', 'undone']
@@ -1341,7 +1333,7 @@ def normalize_by(data_raw, data, method='var'):
     if method == 'var':
         n_data = (data-me)/st
         return n_data
-        
+
 def denormalize_by(data_by, n_vect, n_method = 'var'):
     #based on the normalization
     if n_method == 'var':
@@ -1357,14 +1349,14 @@ def l(a,b):
     c = np.zeros(b.shape)
     c[a-b >=0] = 1
     return c
-        
+
 ##Function to show hits
-#som_labels = sm.project_data(Tr_Data)
-#S = pd.DataFrame(data=som_labels,columns= ['label'])
+#som_labels = sm.project_data(Tr_data)
+#S = pd.dataFrame(data=som_labels,columns= ['label'])
 #a = S['label'].value_counts()
 #a = a.sort_index()
-#a = pd.DataFrame(data=a.values, index=a.index,columns=['label'])
-#d = pd.DataFrame(data= range(msz0*msz1),columns=['node_ID'])
+#a = pd.dataFrame(data=a.values, index=a.index,columns=['label'])
+#d = pd.dataFrame(data= range(msz0*msz1),columns=['node_ID'])
 #c  = d.join(a,how='outer')
 #c.fillna(value=0,inplace=True)
 #hits = c.values[:,1]
