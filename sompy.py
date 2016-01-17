@@ -1,14 +1,13 @@
 # -*- coding: utf-8 -*-
 
 
-# Author: Vahid Moosavi 2015 08 08 10:50 am
+# Author: Vahid Moosavi (sevamoo@gmail.com)
 #         Chair For Computer Aided Architectural Design, ETH  Zurich
 #         Future Cities Lab
 #         www.vahidmoosavi.com
-#         sevamoo@gmail.com
 
-# Contributor: Sebastian Packmann
-#              sebastian.packmann@gmail.com
+# Contributor: Sebastian Packmann (sebastian.packmann@gmail.com)
+
 
 import tempfile
 import os
@@ -26,6 +25,8 @@ from scipy.sparse import csr_matrix
 from sklearn import neighborbors
 from sklearn.externals.joblib import Parallel, delayed, load, dump
 from sklearn.decomposition import RandomizedPCA, PCA
+
+from codebook import Codebook
 
 
 class SOM(object):
@@ -51,11 +52,10 @@ class SOM(object):
 
         self.name = name
         self.data_raw = data
-        self.initialization = initialization
         self.neighbor = neighbor
         self.mapshape = mapshape
-        self.lattice = lattice
         self.mask = mask or np.ones([1, self._dim])
+        self.initialization = initialization
 
         self._data = normalize(data, method=normalization) if normalization == 'var' else data
         self._dim = data.shape[1]
@@ -70,7 +70,8 @@ class SOM(object):
         self.alfaini = 'inv'
         self.alfafinal = .005
 
-        self._mapsize, self._nnodes = self.calculate_mapsize_and_nnodes(mapsize)
+        self.codebook = Codebook(mapsize, lattice)
+
         self._component_names = self.build_component_names()
         self._distance_matrix = self.calculate_map_dist()
 
@@ -141,115 +142,18 @@ class SOM(object):
 
         return dlabels
 
-    def calculate_mapsize_and_nnodes(self, defined_mapsize=None):
-        mapsize, nnodes = None, None
-
-        if defined_mapsize:
-            if 2 == len(defined_mapsize):
-                mapsize = [1, np.max(defined_mapsize)] if 1 == np.min(defined_mapsize) else defined_mapsize
-
-            elif 1 == len(defined_mapsize):
-                mapsize = [1, defined_mapsize[0]]
-                print 'input was considered as the numbers of nodes'
-                print 'map size is [{dlen},{dlen}]'.format(dlen=int(defined_mapsize[0]/2))
-
-            nnodes = mapsize[0]*mapsize[1]
-        else:
-            tmp = int(round(np.sqrt(self._dlen)))
-            nnodes = tmp
-            mapsize = [int(3./5*nnodes), int(2./5*nnodes)]
-
-        return mapsize, nnodes
-
     def calculate_map_dist(self):
         """
         Calculates the grid distance, which will be used during the training steps.
         It supports only planar grids for the moment
         """
-        bmus_distance_matrix = np.zeros((self._nnodes, self._nnodes))
-        for i in range(self._nnodes):
-            bmus_distance_matrix[i] = self.grid_dist(i).reshape(1, self._nnodes)
+        nnodes = self.codebook.nnodes
+
+        bmus_distance_matrix = np.zeros((nnodes, nnodes))
+        for i in range(nnodes):
+            bmus_distance_matrix[i] = self.codebook.grid_dist(i).reshape(1, nnodes)
 
         return bmus_distance_matrix
-
-    def grid_dist(self, bmu_ind):
-        """
-        Calculates grid distance based on the lattice type.
-        A bmu_coord is be calculated and then distance matrix in the map will be returned
-
-        @param bmu_ind  number between 0 and number of nodes-1. depending on the map size
-        """
-        try:
-            lattice = self.lattice
-        except:
-            lattice = 'hexa'
-            print 'lattice not found! Lattice as hexa was set'
-
-        if lattice == 'rect':
-            return self.rect_dist(bmu_ind)
-
-        elif lattice == 'hexa':
-            return self.hexa_dist(bmu_ind)
-
-    def hexa_dist(self, bmu_ind):
-        msize = self._mapsize
-        rows = msize[0]
-        cols = msize[1]
-
-        print 'to be implemented', rows, cols
-        return np.zeros((rows, cols))
-
-    def rect_dist(self, bmu_ind):
-        """
-        Calculates the distance of the specified bmu to the other bmus in the matrix, generating a distance matrix
-
-        Ej. The distance matrix for the bmu_ind=5, that corresponds to the_coord (1,1)
-           array([[2, 1, 2, 5],
-                  [1, 0, 1, 4],
-                  [2, 1, 2, 5],
-                  [5, 4, 5, 8]])
-
-        @param bmu_ind  number between 0 and number of nodes-1. depending on the map size
-        """
-        msize = self._mapsize
-        rows = msize[0]
-        cols = msize[1]
-
-        #bmu should be an integer between 0 to no_nodes
-        if 0 <= bmu_ind <= (rows*cols):
-            c_bmu = int(bmu_ind % cols)
-            r_bmu = int(bmu_ind / cols)
-        else:
-            print 'wrong bmu'
-
-        if rows > 0 and cols > 0:
-            r = np.arange(0, rows, 1)[:, np.newaxis]
-            c = np.arange(0, cols, 1)
-            dist2 = (r-r_bmu)**2 + (c-c_bmu)**2
-
-            return dist2.ravel()
-        else:
-            print 'please consider the above mentioned errors'
-            return np.zeros((rows, cols)).ravel()
-
-    def init_map(self):
-        """
-        Initialize SOM's weight vectors, referred as codebook
-        """
-
-        if self.initialization == 'random':
-            #It produces random values in the range of min- max of each dimension based on a uniform distribution
-            mn = np.tile(np.min(self._data, axis=0), (self._nnodes, 1))
-            mx = np.tile(np.max(self._data, axis=0), (self._nnodes, 1))
-            self._codebook = mn + (mx-mn)*(np.random.rand(self._nnodes, self._dim))
-
-        elif self.initialization == 'pca':
-            self._codebook = self.linear_init()  # it is based on two largest eigenvalues of correlation matrix
-
-        else:
-            print 'please select a correct initialization method'
-            print 'set a correct one in SOM. current SOM.initialization:  ', self.initialization
-            print "possible init methods:'random', 'pca'"
 
     def train(self, n_job=1, shared_memory='no', verbose='on'):
         t0 = time()
@@ -266,7 +170,11 @@ class SOM(object):
             print
             t0 = time()
 
-        self.init_map()
+        if self.initialization == 'random':
+            self.codebook.random_initialization(self._data)
+
+        elif self.initialization == 'pca':
+            self.codebook.pca_linear_initialization(self._data)
 
         if verbose == 'on':
             print 'initialization done in %f seconds' % round(time()-t0, 3)
@@ -290,10 +198,10 @@ class SOM(object):
             print "final quantization error: %f" % err
 
     def _calculate_ms_and_mpd(self):
-        mn = np.min(self._mapsize)
-        max_s = max(self._mapsize[0], self._mapsize[1])
+        mn = np.min(self.codebook.mapsize)
+        max_s = max(self.codebook.mapsize[0], self.codebook.mapsize[1])
 
-        mpd = float(self._nnodes*10)/float(self._dlen) if mn == 1 else float(self._nnodes)/float(self._dlen)
+        mpd = float(self.codebook.nnodes*10)/float(self._dlen) if mn == 1 else float(self.codebook.nnodes)/float(self._dlen)
         ms = max_s/2.0 if mn == 1 else max_s
 
         return ms, mpd
@@ -309,8 +217,6 @@ class SOM(object):
         if self.initialization == 'random':
             radiusin = max(1, np.ceil(ms/3.))
             radiusfin = max(1, radiusin/6.)
-            #radiusin = max(1, np.ceil(ms/1.))
-            #radiusfin = max(1, radiusin/2.)
 
         elif self.initialization == 'pca':
             radiusin = max(1, np.ceil(ms/8.))
@@ -330,9 +236,9 @@ class SOM(object):
             trainlen = int(np.ceil(50*mpd))
             radiusin = max(1, ms/12.)  # from radius fin in rough training
             radiusfin = max(1, radiusin/25.)
+            #radiusin = max(1, ms/2.)  # from radius fin in rough training
+            #radiusfin = max(1, radiusin/2.)
 
-             #radiusin = max(1, ms/2.)  # from radius fin in rough training
-             #radiusfin = max(1, radiusin/2.)
         elif self.initialization == 'pca':
             trainlen = int(np.ceil(40*mpd))
             radiusin = max(1, np.ceil(ms/8.)/4)
@@ -391,6 +297,9 @@ class SOM(object):
         """
         Finds the best matching unit (bmu) for each input data from the input matrix. It does all at once parallelizing
         the calculation instead of going through each input and running it against the codebook.
+
+        @param input_matrix numpy matrix representing inputs as rows and features/dimention as cols
+        @param njob number of jobs to parallelize the search
         """
         dlen = input_matrix.shape[0]
         y2 = np.einsum('ij,ij->i', self._codebook, self._codebook)
@@ -414,6 +323,14 @@ class SOM(object):
 
     @staticmethod
     def _chunk_based_bmu_find(input_matrix, codebook, y2):
+        """
+        Finds the corresponding bmus to the input matrix.
+
+        @param input_matrix a matrix of input data, representing input vector as rows, and vectors features/dimention as cols
+                            when parallelizing the search, the input_matrix can be a sub matrix from the bigger matrix
+        @param codebook matrix of weights to be used for the bmu search
+        @param y2 <not sure>
+        """
         dlen = input_matrix.shape[0]
         nnodes = codebook.shape[0]
         bmu = np.empty((dlen, 2))
@@ -439,9 +356,17 @@ class SOM(object):
 
     def update_codebook_voronoi(self, training_data, bmu, neighborhood):
         """
+        Updates the weights of each node in the codebook that belongs to the bmu's neighborhood.
+
         First finds the Voronoi set of each node. It needs to calculate a smaller matrix.
         Super fast comparing to classic batch training algorithm, it is based on the implemented algorithm in
         som toolbox for Matlab by Helsinky university
+
+        @param training_data input matrix with input vectors as rows and vector features as cols
+        @param bmu best matching unit for each input data
+        @param neighborhood matrix representing the neighborhood of each bmu
+
+        @return An updated codebook that incorporates the learnings from the input data
         """
         # bmu has shape of 2, dlen, Where first row has bmu indexes
         # we construct ud2 from precomputed UD2 : ud2 = UD2[bmu[0,:]]
@@ -514,6 +439,10 @@ class SOM(object):
         """
         Similar to SKlearn we assume that we have X_tr, Y_tr and X_test. Here it is assumed that Target is the last
         column in the codebook and data has dim-1 columns
+
+        @param x_test input vector
+        @param k number of neighbors to use
+        @param wt method to use for the weights (more detail in KNeighborsRegressor docs)
         """
         target = self.data_raw.shape[1]-1
         x_train = self._codebook[:, :target]
@@ -539,6 +468,9 @@ class SOM(object):
         return neighbor.kneighborbors(normalize_by(self.data_raw, data, method='var'))
 
     def bmu_ind_to_xy(self, bmu_ind):
+        """
+        Translates a best matching unit index to the corresponding matrix x,y coordinates
+        """
         rows = self._mapsize[0]
         cols = self._mapsize[1]
 
@@ -601,7 +533,7 @@ class SOM(object):
         #predicted_values = denormalize_by(data_raw[:,Target], predicted_values)
         return np.concatenate((pos_prob, neg_prob), axis=1)
 
-    def node_activation(self, data, wt='distance', target=None):
+    def node_activation(self, data, target=None, wt='distance'):
         weights, ind = None, None
 
         if not target:
@@ -725,21 +657,3 @@ def l(a, b):
     c = np.zeros(b.shape)
     c[a-b >= 0] = 1
     return c
-
-##Function to show hits
-#som_labels = sm.project_data(Tr_data)
-#S = pd.dataFrame(data=som_labels,columns= ['label'])
-#a = S['label'].value_counts()
-#a = a.sort_index()
-#a = pd.dataFrame(data=a.values, index=a.index,columns=['label'])
-#d = pd.dataFrame(data= range(msz0*msz1),columns=['node_ID'])
-#c  = d.join(a,how='outer')
-#c.fillna(value=0,inplace=True)
-#hits = c.values[:,1]
-#hits = hits
-#nodeID = np.arange(msz0*msz1)
-#c_bmu = nodeID%msz1
-#r_bmu = msz0 - nodeID/msz1
-#fig, ax = plt.subplots()
-#plt.axis([0, msz0, 0, msz1])
-#ax.scatter(r_bmu, c_bmu, s=hits/2)

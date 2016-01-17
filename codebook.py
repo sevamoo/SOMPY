@@ -1,0 +1,140 @@
+import numpy as np
+import numexpr as ne
+import scipy.spatial as spdist
+import pandas as pd
+
+from time import time
+from scipy.sparse import csr_matrix
+from sklearn import neighborbors
+from sklearn.externals.joblib import Parallel, delayed, load, dump
+from sklearn.decomposition import RandomizedPCA, PCA
+
+
+class Codebook(object):
+
+    def __init__(self, mapsize, lattice='rect'):
+        self.lattice = lattice
+
+        if 2 == len(mapsize):
+            _size = [1, np.max(mapsize)] if 1 == np.min(mapsize) else mapsize
+
+        elif 1 == len(mapsize):
+            _size = [1, mapsize[0]]
+            print 'input was considered as the numbers of nodes'
+            print 'map size is [{dlen},{dlen}]'.format(dlen=int(mapsize[0]/2))
+
+        self.mapsize = _size
+        self.nnodes = mapsize[0]*mapsize[1]
+        self.matrix = np.asarray(self.mapsize)
+
+    def random_initialization(self, data):
+        mn = np.tile(np.min(data, axis=0), (self.nnodes, 1))
+        mx = np.tile(np.max(data, axis=0), (self.nnodes, 1))
+        self.matrix = mn + (mx-mn)*(np.random.rand(self.nnodes, data.shape[1]))
+
+    def pca_linear_initialization(self, data):
+        """
+        We initialize the map, just by using the first two first eigen vals and eigenvectors
+        Further, we create a linear combination of them in the new map by giving values from -1 to 1 in each
+
+        X = UsigmaWT
+        XTX = Wsigma^2WT
+        T = XW = Usigma
+
+        // Transformed by W EigenVector, can be calculated by multiplication PC matrix by eigenval too
+        // Further, we can get lower ranks by using just few of the eigen vevtors
+
+        T(2) = U(2)sigma(2) = XW(2) ---> 2 is the number of selected eigenvectors
+
+        (*) Note that 'X' is the covariance matrix of original data
+
+        """
+        cols = self.mapsize[1]
+        coord = None
+        pca_components = None
+
+        if np.min(self.mapsize) > 1:
+            coord = np.zeros((self.nnodes, 2))
+            pca_components = 2
+
+            for i in range(0, self.nnodes):
+                coord[i, 0] = int(i / cols)  # x
+                coord[i, 1] = int(i % cols)  # y
+
+        elif np.min(self.mapsize) == 1:
+            coord = np.zeros((self.nnodes, 1))
+            pca_components = 1
+
+            for i in range(0, self.nnodes):
+                coord[i, 0] = int(i % cols)  # y
+
+        mx = np.max(coord, axis=0)
+        mn = np.min(coord, axis=0)
+        coord = (coord - mn)/(mx-mn)
+        coord = (coord - .5)*2
+        me = np.mean(data, 0)
+        data = (data - me)
+        _tmp_matrix = np.tile(me, (self.nnodes, 1))
+
+        pca = RandomizedPCA(n_components=pca_components)  # Randomized PCA is scalable
+        pca.fit(data)
+        eigvec = pca.components_
+        eigval = pca.explained_variance_
+        norms = np.sqrt(np.einsum('ij,ij->i', eigvec, eigvec))
+        eigvec = ((eigvec.T/norms)*eigval).T
+
+        for j in range(self.nnodes):
+            for i in range(eigvec.shape[0]):
+                _tmp_matrix[j, :] = _tmp_matrix[j, :] + coord[j, i]*eigvec[i, :]
+
+        self.matrix = np.around(_tmp_matrix, decimals=6)
+
+    def grid_dist(self, node_ind):
+        """
+        Calculates grid distance based on the lattice type.
+        A bmu_coord is be calculated and then distance matrix in the map will be returned
+
+        @param node_ind  number between 0 and number of nodes-1. depending on the map size
+        """
+        if self.lattice == 'rect':
+            return self._rect_dist(node_ind)
+
+        elif self.lattice == 'hexa':
+            return self._hexa_dist(node_ind)
+
+    def _hexa_dist(self, node_ind):
+        print 'to be implemented', self.mapsize[0], self.mapsize[1]
+        return np.zeros(self.mapsize)
+
+    def _rect_dist(self, node_ind):
+        """
+        Calculates the distance of the specified node to the other nodes in the matrix, generating a distance matrix
+
+        Ej. The distance matrix for the node_ind=5, that corresponds to the_coord (1,1)
+           array([[2, 1, 2, 5],
+                  [1, 0, 1, 4],
+                  [2, 1, 2, 5],
+                  [5, 4, 5, 8]])
+
+        @param node_ind  number between 0 and number of nodes-1. depending on the map size
+        """
+        rows = self.mapsize[0]
+        cols = self.mapsize[1]
+
+        #bmu should be an integer between 0 to no_nodes
+        if 0 <= node_ind <= (rows*cols):
+            node_col = int(node_ind % cols)
+            node_row = int(node_ind / cols)
+        else:
+            print 'wrong bmu'
+
+        if rows > 0 and cols > 0:
+            r = np.arange(0, rows, 1)[:, np.newaxis]
+            c = np.arange(0, cols, 1)
+            dist2 = (r-node_row)**2 + (c-node_col)**2
+
+            return dist2.ravel()
+        else:
+            print 'please consider the above mentioned errors'
+            return np.zeros((rows, cols)).ravel()
+
