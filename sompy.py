@@ -27,6 +27,35 @@ from sklearn.externals.joblib import Parallel, delayed, load, dump
 from sklearn.decomposition import RandomizedPCA, PCA
 
 from codebook import Codebook
+from neighborhood import gaussian_neighborhood, bubble_neighborhood
+from normalization import NormalizatorFactory
+
+
+class ComponentNamesError(Exception):
+    pass
+
+
+class SOMFactory(object):
+
+    @staticmethod
+    def build(data,
+              mapsize,
+              mask=None,
+              mapshape='planar',
+              lattice='rect',
+              normalization='var',
+              initialization='pca',
+              neighborhood='gaussian',
+              name='sompy'):
+
+        normalizer = NormalizatorFactory.build(normalization) if normalization else None
+
+        if neighborhood == 'gaussian':
+            neighborhood_calculator = None
+        else:
+            neighborhood_calculator = None
+
+        return SOM(data, mapsize, mask, mapshape, lattice, initialization, normalizer, neighborhood_calculator, name)
 
 
 class SOM(object):
@@ -37,9 +66,9 @@ class SOM(object):
                  mask=None,
                  mapshape='planar',
                  lattice='rect',
-                 normalization='var',
                  initialization='pca',
-                 neighbor='gaussian',
+                 normalizer=None,
+                 neighbor=None,
                  name='sompy'):
 
         # available mapshapes ['planar','toroid','cylinder']
@@ -50,20 +79,20 @@ class SOM(object):
         # available algorithms = ['seq','batch']
         # available alfa_types = ['linear','inv','power']
 
+        self._data = normalizer.normalize(data) if normalizer else data
+        self._normalizer = normalizer
+        self._dim = data.shape[1]
+        self._dlen = data.shape[0]
+        self._dlabel = None
+        self._bmu = None
+
         self.name = name
         self.data_raw = data
         self.neighbor = neighbor
+        self.neighborhood_method = gaussian_neighborhood
         self.mapshape = mapshape
-        self.mask = mask or np.ones([1, self._dim])
         self.initialization = initialization
-
-        self._data = normalize(data, method=normalization) if normalization == 'var' else data
-        self._dim = data.shape[1]
-        self._dlen = data.shape[0]
-
-        self._dlabel = None
-        self._codebook = None
-        self._bmu = None
+        self.mask = mask or np.ones([1, self._dim])
 
         # TODO: These 3 are not used anywhere
         self.algtype = 'batch'
@@ -87,7 +116,7 @@ class SOM(object):
             if self._dim == len(compnames):
                 self._component_names = np.asarray(compnames)[np.newaxis, :]
             else:
-                print 'compname should have the same size'
+                raise ComponentNamesError('Component names should have the same size as the data dimension/features')
         except:
             pass
             print 'no data yet: please first set training data to the SOM'
@@ -149,11 +178,11 @@ class SOM(object):
         """
         nnodes = self.codebook.nnodes
 
-        bmus_distance_matrix = np.zeros((nnodes, nnodes))
+        distance_matrix = np.zeros((nnodes, nnodes))
         for i in range(nnodes):
-            bmus_distance_matrix[i] = self.codebook.grid_dist(i).reshape(1, nnodes)
+            distance_matrix[i] = self.codebook.grid_dist(i).reshape(1, nnodes)
 
-        return bmus_distance_matrix
+        return distance_matrix
 
     def train(self, n_job=1, shared_memory='no', verbose='on'):
         t0 = time()
@@ -236,8 +265,6 @@ class SOM(object):
             trainlen = int(np.ceil(50*mpd))
             radiusin = max(1, ms/12.)  # from radius fin in rough training
             radiusfin = max(1, radiusin/25.)
-            #radiusin = max(1, ms/2.)  # from radius fin in rough training
-            #radiusfin = max(1, radiusin/2.)
 
         elif self.initialization == 'pca':
             trainlen = int(np.ceil(40*mpd))
@@ -263,6 +290,7 @@ class SOM(object):
 
         bmu = None
         neighborhood = None
+
         # X2 is part of euclidean distance (x-y)^2 = x^2 +y^2 - 2xy that we use for each data row in bmu finding.
         # Since it is a fixed value we can skip it during bmu finding for each data point,
         # but later we need it calculate quantification error
@@ -272,17 +300,13 @@ class SOM(object):
             print 'radius_ini: %f , radius_final: %f, trainlen: %d' % (radiusin, radiusfin, trainlen)
 
         for i in range(trainlen):
-            if self.neighbor == 'gaussian':
-                neighborhood = np.exp(-1.0*self._distance_matrix/(2.0*radius[i]**2)).reshape(self._nnodes, self._nnodes)
-
-            if self.neighbor == 'bubble':
-                neighborhood = l(radius[i], np.sqrt(self._distance_matrix.flatten())).reshape(self._nnodes, self._nnodes) + .000000000001
+            neighborhood = self.neighborhood_method(self._distance_matrix, radius[i], self.codebook.nnodes)
 
             t1 = time()
             bmu = self.find_bmu(data, njb=njob)
 
             t2 = time()
-            self._codebook = self.update_codebook_voronoi(data, bmu, neighborhood)
+            self.codebook.matrix = self.update_codebook_voronoi(data, bmu, neighborhood)
             #print 'updating nodes: ', round (time()- t2, 3)
 
             if verbose == 'on':
@@ -302,7 +326,7 @@ class SOM(object):
         @param njob number of jobs to parallelize the search
         """
         dlen = input_matrix.shape[0]
-        y2 = np.einsum('ij,ij->i', self._codebook, self._codebook)
+        y2 = np.einsum('ij,ij->i', self.codebook.matrix, self.codebook.matrix)
 
         t_temp = time()
 
@@ -312,7 +336,7 @@ class SOM(object):
         row_chunk = lambda part: part * dlen // njb
         col_chunk = lambda part: min((part+1)*dlen // njb, dlen)
 
-        b = parallelizer(chunk_bmu_finder(input_matrix[row_chunk(i):col_chunk(i)], self._codebook, y2) for i in xrange(njb))
+        b = parallelizer(chunk_bmu_finder(input_matrix[row_chunk(i):col_chunk(i)], self.codebook.matrix, y2) for i in xrange(njb))
 
         #print 'bmu finding: %f seconds ' %round(time() - t_temp, 3)
         t1 = time()
@@ -379,13 +403,13 @@ class SOM(object):
         row = inds
         col = np.arange(self._dlen)
         val = np.tile(1, self._dlen)
-        P = csr_matrix((val, (row, col)), shape=(self._nnodes, self._dlen))
+        P = csr_matrix((val, (row, col)), shape=(self.codebook.nnodes, self._dlen))
         S = P.dot(training_data)
 
         # neighborhood has nnodes*nnodes and S has nnodes*dim  ---> Nominator has nnodes*dim
         nom = neighborhood.T.dot(S)
-        nV = P.sum(axis=1).reshape(1, self._nnodes)
-        denom = nV.dot(neighborhood.T).reshape(self._nnodes, 1)
+        nV = P.sum(axis=1).reshape(1, self.codebook.nnodes)
+        denom = nV.dot(neighborhood.T).reshape(self.codebook.nnodes, 1)
         new_codebook = np.divide(nom, denom)
 
         return np.around(new_codebook, decimals=6)
@@ -396,8 +420,8 @@ class SOM(object):
         but it is not that fast.
         """
         clf = neighborbors.KNeighborsClassifier(n_neighborbors=1)
-        labels = np.arange(0, self._codebook.shape[0])
-        clf.fit(self._codebook, labels)
+        labels = np.arange(0, self.codebook.matrix.shape[0])
+        clf.fit(self.codebook.matrix, labels)
 
         # The codebook values are all normalized
         # we can normalize the input data based on mean and std of original data
@@ -410,11 +434,11 @@ class SOM(object):
     def predict_by(self, data, target, k=5, wt='distance'):
         # here it is assumed that target is the last column in the codebook
         # and data has dim-1 columns
-        dim = self._codebook.shape[1]
-        ind = np.arange(0,dim)
+        dim = self.codebook.matrix.shape[1]
+        ind = np.arange(0, dim)
         indX = ind[ind != target]
-        x = self._codebook[:, indX]
-        y = self._codebook[:, target]
+        x = self.codebook.matrix[:, indX]
+        y = self.codebook.matrix[:, target]
         n_neighborbors = k
         clf = neighborbors.KNeighborsRegressor(n_neighborbors, weights=wt)
         clf.fit(x, y)
@@ -445,8 +469,8 @@ class SOM(object):
         @param wt method to use for the weights (more detail in KNeighborsRegressor docs)
         """
         target = self.data_raw.shape[1]-1
-        x_train = self._codebook[:, :target]
-        y_train = self._codebook[:, target]
+        x_train = self.codebook.matrix[:, :target]
+        y_train = self.codebook.matrix[:, target]
         clf = neighborbors.KNeighborsRegressor(k, weights=wt)
         clf.fit(x_train, y_train)
 
@@ -461,7 +485,7 @@ class SOM(object):
         from sklearn.neighborbors import NearestNeighbors
         # we find the k most similar nodes to the input vector
         neighbor = NearestNeighbors(n_neighborbors=k)
-        neighbor.fit(self._codebook)
+        neighbor.fit(self.codebook.matrix)
 
         # The codebook values are all normalized
         # we can normalize the input data based on mean and std of original data
@@ -471,8 +495,8 @@ class SOM(object):
         """
         Translates a best matching unit index to the corresponding matrix x,y coordinates
         """
-        rows = self._mapsize[0]
-        cols = self._mapsize[1]
+        rows = self.codebook.mapsize[0]
+        cols = self.codebook.mapsize[1]
 
         # bmu should be an integer between 0 to no_nodes
         out = np.zeros((bmu_ind.shape[0], 3))
@@ -485,15 +509,15 @@ class SOM(object):
 
     def cluster(self, method='Kmeans', n_clusters=8):
         import sklearn.cluster as clust
-        return clust.KMeans(n_clusters=n_clusters).fit_predict(denormalize_by(self.data_raw, self._codebook, n_method='var'))
+        return clust.KMeans(n_clusters=n_clusters).fit_predict(denormalize_by(self.data_raw, self.codebook.matrix, n_method='var'))
 
     def predict_probability(self, data, target, k=5):
         # here it is assumed that Target is the last column in the codebook #and data has dim-1 columns
-        dim = self._codebook.shape[1]
-        ind = np.arange(0,dim)
+        dim = self.codebook.matrix.shape[1]
+        ind = np.arange(0, dim)
         indx = ind[ind != target]
-        x = self._codebook[:, indx]
-        y = self._codebook[:, target]
+        x = self.codebook.matrix[:, indx]
+        y = self.codebook.matrix[:, target]
 
         clf = neighborbors.KNeighborsRegressor(k, weights='distance')
         clf.fit(x, y)
@@ -514,7 +538,7 @@ class SOM(object):
         weights = 1./weights
         sum_ = np.sum(weights, axis=1)
         weights = weights/sum_[:, np.newaxis]
-        labels = np.sign(self._codebook[ind, target])
+        labels = np.sign(self.codebook.matrix[ind, target])
         labels[labels >= 0] = 1
 
         #for positives
@@ -537,9 +561,9 @@ class SOM(object):
         weights, ind = None, None
 
         if not target:
-            clf = neighborbors.KNeighborsClassifier(n_neighborbors=self._nnodes)
-            labels = np.arange(0, self._codebook.shape[0])
-            clf.fit(self._codebook, labels)
+            clf = neighborbors.KNeighborsClassifier(n_neighborbors=self.codebook.nnodes)
+            labels = np.arange(0, self.codebook.matrix.shape[0])
+            clf.fit(self.codebook.matrix, labels)
 
             # The codebook values are all normalized
             # we can normalize the input data based on mean and std of original data
@@ -552,63 +576,6 @@ class SOM(object):
             #weights = np.exp(weights)/S_
 
         return weights, ind
-
-    def linear_init(self):
-        """
-        We initialize the map, just by using the first two first eigen vals and eigenvectors
-        Further, we create a linear combination of them in the new map by giving values from -1 to 1 in each
-
-        X = UsigmaWT
-        XTX = Wsigma^2WT
-        T = XW = Usigma
-
-        // Transformed by W EigenVector, can be calculated by multiplication PC matrix by eigenval too
-        // Further, we can get lower ranks by using just few of the eigen vevtors
-
-        T(2) = U(2)sigma(2) = XW(2) ---> 2 is the number of selected eigenvectors
-
-        (*) Note that 'X' is the covariance matrix of original data
-
-        """
-        cols = self._mapsize[1]
-        coord = None
-        pca_components = None
-
-        if np.min(self._mapsize) > 1:
-            coord = np.zeros((self._nnodes, 2))
-            pca_components = 2
-
-            for i in range(0, self._nnodes):
-                coord[i, 0] = int(i / cols)  # x
-                coord[i, 1] = int(i % cols)  # y
-
-        elif np.min(self._mapsize) == 1:
-            coord = np.zeros((self._nnodes, 1))
-            pca_components = 1
-
-            for i in range(0, self._nnodes):
-                coord[i, 0] = int(i % cols)  # y
-
-        mx = np.max(coord, axis=0)
-        mn = np.min(coord, axis=0)
-        coord = (coord - mn)/(mx-mn)
-        coord = (coord - .5)*2
-        me = np.mean(self._data, 0)
-        data = (self._data - me)
-        self._codebook = np.tile(me, (self._nnodes, 1))
-
-        pca = RandomizedPCA(n_components=pca_components)  # Randomized PCA is scalable
-        pca.fit(data)
-        eigvec = pca.components_
-        eigval = pca.explained_variance_
-        norms = np.sqrt(np.einsum('ij,ij->i', eigvec, eigvec))
-        eigvec = ((eigvec.T/norms)*eigval).T
-
-        for j in range(self._nnodes):
-            for i in range(eigvec.shape[0]):
-                self._codebook[j, :] = self._codebook[j, :] + coord[j, i]*eigvec[i, :]
-
-        return np.around(self._codebook, decimals=6)
 
 
 def _mean_and_standard_dev(data):
@@ -652,8 +619,3 @@ def denormalize_by(data_by, n_vect, n_method='var'):
 
     return denormalized_data
 
-
-def l(a, b):
-    c = np.zeros(b.shape)
-    c[a-b >= 0] = 1
-    return c

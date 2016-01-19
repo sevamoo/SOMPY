@@ -10,6 +10,14 @@ from sklearn.externals.joblib import Parallel, delayed, load, dump
 from sklearn.decomposition import RandomizedPCA, PCA
 
 
+class InvalidNodeIndexError(Exception):
+    pass
+
+
+class InvalidMapsizeError(Exception):
+    pass
+
+
 class Codebook(object):
 
     def __init__(self, mapsize, lattice='rect'):
@@ -22,6 +30,8 @@ class Codebook(object):
             _size = [1, mapsize[0]]
             print 'input was considered as the numbers of nodes'
             print 'map size is [{dlen},{dlen}]'.format(dlen=int(mapsize[0]/2))
+        else:
+            raise InvalidMapsizeError("Mapsize is expected to be a 2 element list or a single int")
 
         self.mapsize = _size
         self.nnodes = mapsize[0]*mapsize[1]
@@ -74,7 +84,7 @@ class Codebook(object):
         coord = (coord - .5)*2
         me = np.mean(data, 0)
         data = (data - me)
-        _tmp_matrix = np.tile(me, (self.nnodes, 1))
+        tmp_matrix = np.tile(me, (self.nnodes, 1))
 
         pca = RandomizedPCA(n_components=pca_components)  # Randomized PCA is scalable
         pca.fit(data)
@@ -85,16 +95,16 @@ class Codebook(object):
 
         for j in range(self.nnodes):
             for i in range(eigvec.shape[0]):
-                _tmp_matrix[j, :] = _tmp_matrix[j, :] + coord[j, i]*eigvec[i, :]
+                tmp_matrix[j, :] = tmp_matrix[j, :] + coord[j, i]*eigvec[i, :]
 
-        self.matrix = np.around(_tmp_matrix, decimals=6)
+        self.matrix = np.around(tmp_matrix, decimals=6)
 
     def grid_dist(self, node_ind):
         """
         Calculates grid distance based on the lattice type.
-        A bmu_coord is be calculated and then distance matrix in the map will be returned
 
         @param node_ind  number between 0 and number of nodes-1. depending on the map size
+        @return matrix representing the distance matrix
         """
         if self.lattice == 'rect':
             return self._rect_dist(node_ind)
@@ -103,8 +113,7 @@ class Codebook(object):
             return self._hexa_dist(node_ind)
 
     def _hexa_dist(self, node_ind):
-        print 'to be implemented', self.mapsize[0], self.mapsize[1]
-        return np.zeros(self.mapsize)
+        raise NotImplementedError()
 
     def _rect_dist(self, node_ind):
         """
@@ -117,16 +126,17 @@ class Codebook(object):
                   [5, 4, 5, 8]])
 
         @param node_ind  number between 0 and number of nodes-1. depending on the map size
+        @return matrix representing the distance matrix
         """
         rows = self.mapsize[0]
         cols = self.mapsize[1]
 
-        #bmu should be an integer between 0 to no_nodes
+        # bmu should be an integer between 0 to no_nodes
         if 0 <= node_ind <= (rows*cols):
             node_col = int(node_ind % cols)
             node_row = int(node_ind / cols)
         else:
-            print 'wrong bmu'
+            raise InvalidNodeIndexError("Node index '%s' is invalid" % node_ind)
 
         if rows > 0 and cols > 0:
             r = np.arange(0, rows, 1)[:, np.newaxis]
@@ -135,6 +145,7 @@ class Codebook(object):
 
             return dist2.ravel()
         else:
-            print 'please consider the above mentioned errors'
-            return np.zeros((rows, cols)).ravel()
+            raise InvalidMapsizeError("One or both of the map dimensions are invalid. Cols '%s', Rows '%s'".format(
+                cols=cols,
+                rows=rows))
 
