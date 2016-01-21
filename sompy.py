@@ -24,10 +24,9 @@ from time import time
 from scipy.sparse import csr_matrix
 from sklearn import neighborbors
 from sklearn.externals.joblib import Parallel, delayed, load, dump
-from sklearn.decomposition import RandomizedPCA, PCA
 
 from codebook import Codebook
-from neighborhood import gaussian_neighborhood, bubble_neighborhood
+from neighborhood import NeighborhoodFactory
 from normalization import NormalizatorFactory
 
 
@@ -49,36 +48,56 @@ class SOMFactory(object):
               name='sompy'):
 
         normalizer = NormalizatorFactory.build(normalization) if normalization else None
+        neighborhood_calculator = NeighborhoodFactory.build(neighborhood)
 
-        if neighborhood == 'gaussian':
-            neighborhood_calculator = None
-        else:
-            neighborhood_calculator = None
-
-        return SOM(data, mapsize, mask, mapshape, lattice, initialization, normalizer, neighborhood_calculator, name)
+        return SOM(data, neighborhood_calculator, normalizer, mapsize, mask, mapshape, lattice, initialization, name)
 
 
 class SOM(object):
 
     def __init__(self,
                  data,
+                 neighborhood,
+                 normalizer=None,
                  mapsize=None,
                  mask=None,
                  mapshape='planar',
                  lattice='rect',
                  initialization='pca',
-                 normalizer=None,
-                 neighbor=None,
+                 training='batch',
                  name='sompy'):
+        """
+        Self Organizing Map
 
-        # available mapshapes ['planar','toroid','cylinder']
-        # available lattices ['hexa','rect']
-        # available normalizations ['var']
-        # available initializations ['pca', 'random']
-        # available neighborhood ['Gaussian','manhattan','bubble','cut_gaussian','epanechicov']
-        # available algorithms = ['seq','batch']
-        # available alfa_types = ['linear','inv','power']
+        :param data: data to be clustered, represented as a matrix of n rows, as inputs and m cols as input features
+        :param neighborhood: neighborhood object calculator. Options are:
+            - gaussian
+            - manhattan
+            - bubble
+            - cut_gaussian
+            - epanechicov
 
+        :param normalizer: normalizer object calculator (var). Options are:
+            - var
+
+        :param mapsize: tuple/list defining the dimensions of the som. If single number is provided is considered as the number of nodes.
+        :param mask: mask
+        :param mapshape: shape of the som. Options are:
+            - planar
+            - toroid
+            - cylinder
+
+        :param lattice: type of lattice. Options are:
+            - hexa
+            - rect
+
+        :param initialization: method to be used for initialization of the som. Options are:
+            - pca
+            - random
+
+        :param name: name used to identify the som
+        :param training: Training mode (seq, batch)
+        """
         self._data = normalizer.normalize(data) if normalizer else data
         self._normalizer = normalizer
         self._dim = data.shape[1]
@@ -88,17 +107,10 @@ class SOM(object):
 
         self.name = name
         self.data_raw = data
-        self.neighbor = neighbor
-        self.neighborhood_method = gaussian_neighborhood
+        self.neighborhood = neighborhood
         self.mapshape = mapshape
         self.initialization = initialization
         self.mask = mask or np.ones([1, self._dim])
-
-        # TODO: These 3 are not used anywhere
-        self.algtype = 'batch'
-        self.alfaini = 'inv'
-        self.alfafinal = .005
-
         self.codebook = Codebook(mapsize, lattice)
 
         self._component_names = self.build_component_names()
@@ -192,7 +204,6 @@ class SOM(object):
         #print 'array size in log10 scale' , np.log10(self._dlen*self._nnodes*self._dim)
         #print 'nomber of jobs in parallel: ', n_job 
         #######################################
-        #initialization
         if verbose == 'on':
             print 
             print 'initialization method = %s, initializing..' % self.initialization
@@ -300,7 +311,7 @@ class SOM(object):
             print 'radius_ini: %f , radius_final: %f, trainlen: %d' % (radiusin, radiusfin, trainlen)
 
         for i in range(trainlen):
-            neighborhood = self.neighborhood_method(self._distance_matrix, radius[i], self.codebook.nnodes)
+            neighborhood = self.neighborhood.calculate(self._distance_matrix, radius[i], self.codebook.nnodes)
 
             t1 = time()
             bmu = self.find_bmu(data, njb=njob)
@@ -322,8 +333,8 @@ class SOM(object):
         Finds the best matching unit (bmu) for each input data from the input matrix. It does all at once parallelizing
         the calculation instead of going through each input and running it against the codebook.
 
-        @param input_matrix numpy matrix representing inputs as rows and features/dimention as cols
-        @param njob number of jobs to parallelize the search
+        :param input_matrix: numpy matrix representing inputs as rows and features/dimension as cols
+        :param njob: number of jobs to parallelize the search
         """
         dlen = input_matrix.shape[0]
         y2 = np.einsum('ij,ij->i', self.codebook.matrix, self.codebook.matrix)
@@ -350,10 +361,10 @@ class SOM(object):
         """
         Finds the corresponding bmus to the input matrix.
 
-        @param input_matrix a matrix of input data, representing input vector as rows, and vectors features/dimention as cols
+        :param input_matrix: a matrix of input data, representing input vector as rows, and vectors features/dimention as cols
                             when parallelizing the search, the input_matrix can be a sub matrix from the bigger matrix
-        @param codebook matrix of weights to be used for the bmu search
-        @param y2 <not sure>
+        :param codebook: matrix of weights to be used for the bmu search
+        :param y2: <not sure>
         """
         dlen = input_matrix.shape[0]
         nnodes = codebook.shape[0]
@@ -386,11 +397,11 @@ class SOM(object):
         Super fast comparing to classic batch training algorithm, it is based on the implemented algorithm in
         som toolbox for Matlab by Helsinky university
 
-        @param training_data input matrix with input vectors as rows and vector features as cols
-        @param bmu best matching unit for each input data
-        @param neighborhood matrix representing the neighborhood of each bmu
+        :param training_data: input matrix with input vectors as rows and vector features as cols
+        :param bmu: best matching unit for each input data
+        :param neighborhood: matrix representing the neighborhood of each bmu
 
-        @return An updated codebook that incorporates the learnings from the input data
+        :returns: An updated codebook that incorporates the learnings from the input data
         """
         # bmu has shape of 2, dlen, Where first row has bmu indexes
         # we construct ud2 from precomputed UD2 : ud2 = UD2[bmu[0,:]]
@@ -425,7 +436,7 @@ class SOM(object):
 
         # The codebook values are all normalized
         # we can normalize the input data based on mean and std of original data
-        data = normalize_by(self.data_raw, data, method='var')
+        data = self._normalizer.normalize_by(self.data_raw, data)
         #data = normalize(data, method='var')
         #plt.hist(data[:,2])
 
@@ -449,14 +460,14 @@ class SOM(object):
 
         if dimdata == dim:
             # data[:, target] == 0 mmmm whas this meant to be an assignment?
-            data = normalize_by(self.data_raw, data, method='var')
+            data = self._normalizer.normalize_by(self.data_raw, data)
             data = data[:, indX]
 
         elif dimdata == dim-1:
-            data = normalize_by(self.data_raw[:, indX], data, method='var')
+            data = self._normalizer.normalize_by(self.data_raw[:, indX], data)
 
         predicted_values = clf.predict(data)
-        predicted_values = denormalize_by(self.data_raw[:, target], predicted_values)
+        predicted_values = self._normalizer.denormalize_by(self.data_raw[:, target], predicted_values)
         return predicted_values
 
     def predict(self, x_test, k=5, wt='distance'):
@@ -464,9 +475,10 @@ class SOM(object):
         Similar to SKlearn we assume that we have X_tr, Y_tr and X_test. Here it is assumed that Target is the last
         column in the codebook and data has dim-1 columns
 
-        @param x_test input vector
-        @param k number of neighbors to use
-        @param wt method to use for the weights (more detail in KNeighborsRegressor docs)
+        :param x_test: input vector
+        :param k: number of neighbors to use
+        :param wt: method to use for the weights (more detail in KNeighborsRegressor docs)
+        :returns: predicted values for the input data
         """
         target = self.data_raw.shape[1]-1
         x_train = self.codebook.matrix[:, :target]
@@ -476,10 +488,10 @@ class SOM(object):
 
         # The codebook values are all normalized
         # we can normalize the input data based on mean and std of original data
-        x_test = normalize_by(self.data_raw[:, :target], x_test, method='var')
+        x_test = self._normalizer.normalize_by(self.data_raw[:, :target], x_test)
         predicted_values = clf.predict(x_test)
 
-        return denormalize_by(self.data_raw[:, target], predicted_values)
+        return self._normalizer.denormalize_by(self.data_raw[:, target], predicted_values)
 
     def find_k_nodes(self, data, k=5):
         from sklearn.neighborbors import NearestNeighbors
@@ -489,11 +501,14 @@ class SOM(object):
 
         # The codebook values are all normalized
         # we can normalize the input data based on mean and std of original data
-        return neighbor.kneighborbors(normalize_by(self.data_raw, data, method='var'))
+        return neighbor.kneighborbors(self._normalizer.normalize_by(self.data_raw, data))
 
     def bmu_ind_to_xy(self, bmu_ind):
         """
         Translates a best matching unit index to the corresponding matrix x,y coordinates
+
+        :param bmu_ind: node index of the best matching unit (number of node from top left node)
+        :returns: corresponding (x,y) coordinate
         """
         rows = self.codebook.mapsize[0]
         cols = self.codebook.mapsize[1]
@@ -509,7 +524,7 @@ class SOM(object):
 
     def cluster(self, method='Kmeans', n_clusters=8):
         import sklearn.cluster as clust
-        return clust.KMeans(n_clusters=n_clusters).fit_predict(denormalize_by(self.data_raw, self.codebook.matrix, n_method='var'))
+        return clust.KMeans(n_clusters=n_clusters).fit_predict(self._normalizer.denormalize_by(self.data_raw, self.codebook.matrix))
 
     def predict_probability(self, data, target, k=5):
         # here it is assumed that Target is the last column in the codebook #and data has dim-1 columns
@@ -528,11 +543,11 @@ class SOM(object):
 
         if dimdata == dim: 
             #data[:,Target] == 0  # mmm assignment?
-            data = normalize_by(self.data_raw, data, method='var')
+            data = self._normalizer.normalize_by(self.data_raw, data)
             data = data[:, indx]
 
         elif dimdata == dim-1:
-            data = normalize_by(self.data_raw[:, indx], data, method='var')
+            data = self._normalizer.normalize_by(self.data_raw[:, indx], data)
 
         weights, ind = clf.kneighborbors(data, n_neighborbors=k, return_distance=True)
         weights = 1./weights
@@ -541,13 +556,13 @@ class SOM(object):
         labels = np.sign(self.codebook.matrix[ind, target])
         labels[labels >= 0] = 1
 
-        #for positives
+        # for positives
         pos_prob = labels.copy()
         pos_prob[pos_prob < 0] = 0
         pos_prob *= weights
         pos_prob = np.sum(pos_prob, axis=1)[:, np.newaxis]
 
-        #for negatives
+        # for negatives
         neg_prob = labels.copy()
         neg_prob[neg_prob > 0] = 0
         neg_prob = neg_prob * weights * -1
@@ -567,55 +582,13 @@ class SOM(object):
 
             # The codebook values are all normalized
             # we can normalize the input data based on mean and std of original data
-            data = normalize_by(self.data_raw, data, method='var')
+            data = self._normalizer.normalize_by(self.data_raw, data)
             weights, ind = clf.kneighborbors(data)
 
-            ##Softmax function
+            # Softmax function
             weights = 1./weights
             #S_  = np.sum(np.exp(weights),axis=1)[:,np.newaxis]
             #weights = np.exp(weights)/S_
 
         return weights, ind
-
-
-def _mean_and_standard_dev(data):
-    return np.mean(data, axis=0), np.std(data, axis=0)
-
-
-def normalize(data, method='var'):
-    #methods  = ['var','range','log','logistic','histD','histC']
-    #status = ['done', 'undone']
-    normalized_data = data
-    me, st = _mean_and_standard_dev(data)
-
-    if method == 'var':
-        normalized_data = (data-me)/st
-
-    return normalized_data
-
-
-def normalize_by(data_raw, data, method='var'):
-    #methods  = ['var','range','log','logistic','histD','histC']
-    #status = ['done', 'undone']
-    # to have the mean and std of the original data, by which SOM is trained
-    normalized_data = data
-    me, st = _mean_and_standard_dev(data_raw)
-
-    if method == 'var':
-        normalized_data = (data-me)/st
-
-    return normalized_data
-
-
-def denormalize_by(data_by, n_vect, n_method='var'):
-    denormalized_data = n_vect
-    me, st = _mean_and_standard_dev(data_by)
-
-    if n_method == 'var':
-        denormalized_data = n_vect * st + me
-
-    else:
-        print 'data is not normalized before'
-
-    return denormalized_data
 

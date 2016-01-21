@@ -38,6 +38,10 @@ class Codebook(object):
         self.matrix = np.asarray(self.mapsize)
 
     def random_initialization(self, data):
+        """
+        :param data: data to use for the initialization
+        :returns: initialized matrix with same dimension as input data
+        """
         mn = np.tile(np.min(data, axis=0), (self.nnodes, 1))
         mx = np.tile(np.max(data, axis=0), (self.nnodes, 1))
         self.matrix = mn + (mx-mn)*(np.random.rand(self.nnodes, data.shape[1]))
@@ -58,6 +62,8 @@ class Codebook(object):
 
         (*) Note that 'X' is the covariance matrix of original data
 
+        :param data: data to use for the initialization
+        :returns: initialized matrix with same dimension as input data
         """
         cols = self.mapsize[1]
         coord = None
@@ -103,8 +109,8 @@ class Codebook(object):
         """
         Calculates grid distance based on the lattice type.
 
-        @param node_ind  number between 0 and number of nodes-1. depending on the map size
-        @return matrix representing the distance matrix
+        :param node_ind:  number between 0 and number of nodes-1. Depending on the map size, starting from top left
+        :returns: matrix representing the distance matrix
         """
         if self.lattice == 'rect':
             return self._rect_dist(node_ind)
@@ -125,11 +131,12 @@ class Codebook(object):
                   [2, 1, 2, 5],
                   [5, 4, 5, 8]])
 
-        @param node_ind  number between 0 and number of nodes-1. depending on the map size
-        @return matrix representing the distance matrix
+        :param node_ind:  number between 0 and number of nodes-1. Depending on the map size, starting from top left
+        :returns: matrix representing the distance matrix
         """
         rows = self.mapsize[0]
         cols = self.mapsize[1]
+        dist = None
 
         # bmu should be an integer between 0 to no_nodes
         if 0 <= node_ind <= (rows*cols):
@@ -143,9 +150,10 @@ class Codebook(object):
             c = np.arange(0, cols, 1)
             dist2 = (r-node_row)**2 + (c-node_col)**2
 
-            return dist2.ravel()
+            dist = dist2.ravel()
         else:
             raise InvalidMapsizeError("One or both of the map dimensions are invalid. Cols '%s', Rows '%s'".format(
                 cols=cols,
                 rows=rows))
 
+        return dist
