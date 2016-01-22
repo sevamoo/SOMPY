@@ -8,6 +8,35 @@ from matplotlib.colors import LogNorm
 from matplotlib import cm
 
 
+class View(object):
+
+    def __init__(self, packed=True, text_size=2.8, show_text=True, col_size=6):
+        self.packed = packed
+        self.text_size = text_size
+        self.show_text = show_text
+        self.col_size = col_size
+
+    def setup(self, width, height, title, *args, **kwargs):
+        raise NotImplementedError()
+
+    def save(self, filename):
+        raise NotImplementedError()
+
+
+class MatplotView(View):
+
+    def setup(self, width, height, title, axis='on', *args, **kwargs):
+        fig = plt.figure(figsize=(width, height))
+        plt.axis('off')
+        plt.title(title)
+        plt.rc('font', **{'size': self.text_size})
+        plt.axis(axis)
+        return fig
+
+    def save(self, filename):
+        raise NotImplementedError()
+
+
 ###################################
 #visualize map
 def view_map(self, what = 'codebook', which_dim = 'all', pack= 'Yes', text_size = 2.8,save='No', save_dir = 'empty',grid='No',text='Yes',cmap='None',COL_SiZe=6):
@@ -313,71 +342,68 @@ def view_map_dot(self,which_dim='all',colormap=None,cols=None,save='No',save_dir
 
         plt.close(fig)
 
-def view_2d(self, text_size,which_dim='all', what = 'codebook'):
-    msz0, msz1 = getattr(self, 'mapsize')
-    if what == 'codebook':
-        if hasattr(self, 'codebook'):
-            codebook = getattr(self, 'codebook')
-            data_raw = getattr(self,'data_raw')
-            codebook = denormalize_by(data_raw, codebook)
-        else:
-            print 'first initialize codebook'
-        if which_dim == 'all':
-            dim = getattr(self, 'dim')
-            indtoshow = np.arange(0,dim).T
-            ratio = float(dim)/float(dim)
-            ratio = np.max((.35,ratio))
-            sH, sV = 16,16*ratio*1
-            plt.figure(figsize=(sH,sV))
-        elif type(which_dim) == int:
-            dim = 1
-            indtoshow = np.zeros(1)
-            indtoshow[0] = int(which_dim)
-            sH, sV = 6,6
-            plt.figure(figsize=(sH,sV))
-        elif type(which_dim) == list:
-            max_dim = codebook.shape[1]
-            dim = len(which_dim)
-            ratio = float(dim)/float(max_dim)
-            #print max_dim, dim, ratio
-            ratio = np.max((.35,ratio))
-            indtoshow = np.asarray(which_dim).T
-            sH, sV = 16,16*ratio*1
-            plt.figure(figsize=(sH,sV))
 
-        no_row_in_plot = dim/6 + 1 #6 is arbitrarily selected
-        if no_row_in_plot <=1:
-            no_col_in_plot = dim
-        else:
-            no_col_in_plot = 6
+def view_2d(som, text_size, which_dim='all'):
+    msz0, msz1 = som.codebook.mapsize
+    codebook = som._normalizer.denormalize_by(som.data_raw, som.codebook.matrix)
+    dim = som._dim
+    indtoshow = None
 
-        axisNum = 0
-        compname = getattr(self, 'compname')
-        norm = matplotlib.colors.normalize(vmin = np.mean(codebook.flatten())-1*np.std(codebook.flatten()), vmax = np.mean(codebook.flatten())+1*np.std(codebook.flatten()), clip = True)
-        while axisNum <dim:
-            axisNum += 1
-            ax = plt.subplot(no_row_in_plot, no_col_in_plot, axisNum)
-            ind = int(indtoshow[axisNum-1])
-            mp = codebook[:,ind].reshape(msz0, msz1)
-            pl = plt.pcolor(mp[::-1],norm = norm)
-#             pl = plt.imshow(mp[::-1])
-            plt.title(compname[0][ind])
-            font = {'size'   : text_size*sH/no_col_in_plot}
-            plt.rc('font', **font)
-            plt.axis('off')
-            plt.axis([0, msz0, 0, msz1])
-            ax.set_yticklabels([])
-            ax.set_xticklabels([])
-            plt.colorbar(pl)
-        plt.show()
+    if which_dim == 'all':
+        indtoshow = np.arange(0, dim).T
+        ratio = float(dim)/float(dim)
+        ratio = np.max((.35, ratio))
+        sH, sV = 16,16*ratio*1
+        plt.figure(figsize=(sH, sV))
+
+    elif type(which_dim) == int:
+        dim = 1
+        indtoshow = np.zeros(1)
+        indtoshow[0] = int(which_dim)
+        sH, sV = 6, 6
+        plt.figure(figsize=(sH, sV))
+
+    elif type(which_dim) == list:
+        max_dim = codebook.shape[1]
+        dim = len(which_dim)
+        ratio = float(dim)/float(max_dim)
+        ratio = np.max((.35, ratio))
+        indtoshow = np.asarray(which_dim).T
+        sH, sV = 16, 16*ratio*1
+        plt.figure(figsize=(sH, sV))
+
+    no_row_in_plot = dim/6 + 1  # 6 is arbitrarily selected
+    no_col_in_plot = no_col_in_plot = dim if no_row_in_plot <= 1 else 6
+
+    axisNum = 0
+    compname = som.component_names
+    norm = matplotlib.colors.normalize(vmin=np.mean(codebook.flatten())-1*np.std(codebook.flatten()),
+                                       vmax=np.mean(codebook.flatten())+1*np.std(codebook.flatten()),
+                                       clip=True)
+    while axisNum < dim:
+        axisNum += 1
+        ax = plt.subplot(no_row_in_plot, no_col_in_plot, axisNum)
+        ind = int(indtoshow[axisNum-1])
+        mp = codebook[:, ind].reshape(msz0, msz1)
+        pl = plt.pcolor(mp[::-1], norm=norm)
+        plt.title(compname[0][ind])
+        font = {'size': text_size*sH/no_col_in_plot}
+        plt.rc('font', **font)
+        plt.axis('off')
+        plt.axis([0, msz0, 0, msz1])
+        ax.set_yticklabels([])
+        ax.set_xticklabels([])
+        plt.colorbar(pl)
+
+    plt.show()
 
 
-def view_2d_Pack(self, text_size,which_dim='all', what = 'codebook',save='No', grid='Yes', save_dir = 'empty',text='Yes',CMAP='None',col_sz=None):
+def view_2d_Pack(som, text_size, which_dim='all', save='No', grid='Yes', save_dir='empty', text='Yes', CMAP=None, col_sz=None):
     import matplotlib.cm as cm
-    msz0, msz1 = getattr(self, 'mapsize')
-    if CMAP=='None':
-        CMAP= cm.RdYlBu_r
-#     	CMAP = cm.jet
+    msz0, msz1 = som.codebook.mapsize
+
+    CMAP = CMAP or cm.RdYlBu_r
+
     if what == 'codebook':
         if hasattr(self, 'codebook'):
             codebook = getattr(self, 'codebook')
