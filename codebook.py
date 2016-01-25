@@ -1,13 +1,6 @@
 import numpy as np
-import numexpr as ne
-import scipy.spatial as spdist
-import pandas as pd
-
-from time import time
-from scipy.sparse import csr_matrix
-from sklearn import neighborbors
-from sklearn.externals.joblib import Parallel, delayed, load, dump
 from sklearn.decomposition import RandomizedPCA, PCA
+from decorators import timeit
 
 
 class InvalidNodeIndexError(Exception):
@@ -36,7 +29,9 @@ class Codebook(object):
         self.mapsize = _size
         self.nnodes = mapsize[0]*mapsize[1]
         self.matrix = np.asarray(self.mapsize)
+        self.initialized = False
 
+    @timeit()
     def random_initialization(self, data):
         """
         :param data: data to use for the initialization
@@ -45,7 +40,9 @@ class Codebook(object):
         mn = np.tile(np.min(data, axis=0), (self.nnodes, 1))
         mx = np.tile(np.max(data, axis=0), (self.nnodes, 1))
         self.matrix = mn + (mx-mn)*(np.random.rand(self.nnodes, data.shape[1]))
+        self.initialized = True
 
+    @timeit()
     def pca_linear_initialization(self, data):
         """
         We initialize the map, just by using the first two first eigen vals and eigenvectors
@@ -104,6 +101,7 @@ class Codebook(object):
                 tmp_matrix[j, :] = tmp_matrix[j, :] + coord[j, i]*eigvec[i, :]
 
         self.matrix = np.around(tmp_matrix, decimals=6)
+        self.initialized = True
 
     def grid_dist(self, node_ind):
         """
