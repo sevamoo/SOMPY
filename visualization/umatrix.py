@@ -1,7 +1,7 @@
 import matplotlib
-from . import MatplotView
+from .view import MatplotView
 from matplotlib import pyplot as plt
-from pylab import meshgrid,cm,imshow,contour,clabel,colorbar,axis,title,show
+from pylab import meshgrid, cm, imshow, contour, clabel, colorbar, axis, title, show
 from math import sqrt
 import numpy as np
 import scipy

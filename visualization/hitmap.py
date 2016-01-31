@@ -1,5 +1,5 @@
 import matplotlib
-from . import MatplotView
+from .view import MatplotView
 from matplotlib import pyplot as plt
 import numpy as np
 
