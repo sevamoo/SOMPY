@@ -186,13 +186,31 @@ class SOM(object):
         return distance_matrix
 
     @timeit()
-    def train(self, n_job=1, shared_memory='no', verbose='on'):
-        logging.root.setLevel(logging.DEBUG)
+    def train(self, n_job=1, shared_memory=False, verbose='info'):
+        """
+        Trains the som
 
-        #print 'data len is %d and data dimension is %d' % (self._dlen, self._dim)
-        #print 'map size is %d, %d' %(self._mapsize[0], self._mapsize[1])
-        #print 'array size in log10 scale' , np.log10(self._dlen*self._nnodes*self._dim)
-        #print 'nomber of jobs in parallel: ', n_job 
+        :param n_job: number of jobs to use to parallelize the traning
+        :param shared_memory: flag to active shared memory
+        :param verbose: verbosity, could be 'debug', 'info' or None
+        """
+        logging.root.setLevel(getattr(logging, verbose.upper()) if verbose else logging.ERROR)
+
+        logging.info(" Training...")
+        logging.debug((
+            "--------------------------------------------------------------\n"
+            " details: \n"
+            "      > data len is {data_len} and data dimension is {data_dim} \n"
+            "      > map size is {mpsz0},{mpsz1}\n"
+            "      > array size in log10 scale is {array_size}\n"
+            "      > number of jobs in parallel: {n_job}\n"
+            " --------------------------------------------------------------\n")
+            .format(data_len=self._dlen,
+                    data_dim=self._dim,
+                    mpsz0=self.codebook.mapsize[0],
+                    mpsz1=self.codebook.mapsize[1],
+                    array_size=np.log10(self._dlen*self.codebook.nnodes*self._dim),
+                    n_job=n_job))
 
         if self.initialization == 'random':
             self.codebook.random_initialization(self._data)
@@ -200,12 +218,11 @@ class SOM(object):
         elif self.initialization == 'pca':
             self.codebook.pca_linear_initialization(self._data)
 
-        self.rough_train(njob=n_job, shared_memory=shared_memory, verbose=verbose)
+        self.rough_train(njob=n_job, shared_memory=shared_memory)
+        self.finetune_train(njob=n_job, shared_memory=shared_memory)
 
-        self.finetune_train(njob=n_job, shared_memory=shared_memory, verbose=verbose)
-
-        if verbose in ['on', 'final']:
-            print "final quantization error: %f" % np.mean(self._bmu[1])
+        logging.debug(" --------------------------------------------------------------")
+        logging.info(" Final quantization error: %f" % np.mean(self._bmu[1]))
 
     def _calculate_ms_and_mpd(self):
         mn = np.min(self.codebook.mapsize)
@@ -216,9 +233,8 @@ class SOM(object):
 
         return ms, mpd
 
-    def rough_train(self, njob=1, shared_memory='no', verbose='on'):
-        if verbose == 'on':
-            print 'rough training...'
+    def rough_train(self, njob=1, shared_memory=False):
+        logging.info(" Rough training...")
 
         ms, mpd = self._calculate_ms_and_mpd()
 
@@ -232,11 +248,10 @@ class SOM(object):
             radiusin = max(1, np.ceil(ms/8.))
             radiusfin = max(1, radiusin/4.)
 
-        self._batchtrain(trainlen, radiusin, radiusfin, njob, shared_memory, verbose)
+        self._batchtrain(trainlen, radiusin, radiusfin, njob, shared_memory)
 
-    def finetune_train(self, njob=1, shared_memory='no', verbose='on'):
-        if verbose == 'on':
-            print 'finetune training...'
+    def finetune_train(self, njob=1, shared_memory=False):
+        logging.info(" Finetune training...")
 
         ms, mpd = self._calculate_ms_and_mpd()
 
@@ -252,12 +267,12 @@ class SOM(object):
             radiusin = max(1, np.ceil(ms/8.)/4)
             radiusfin = 1  # max(1, ms/128)
 
-        self._batchtrain(trainlen, radiusin, radiusfin, njob, shared_memory, verbose)
+        self._batchtrain(trainlen, radiusin, radiusfin, njob, shared_memory)
 
-    def _batchtrain(self, trainlen, radiusin, radiusfin, njob=1, shared_memory='no', verbose='on'):
+    def _batchtrain(self, trainlen, radiusin, radiusfin, njob=1, shared_memory=False):
         radius = np.linspace(radiusin, radiusfin, trainlen)
 
-        if shared_memory == 'yes':
+        if shared_memory:
             data = self._data
             data_folder = tempfile.mkdtemp()
             data_name = os.path.join(data_folder, 'data')
@@ -268,46 +283,39 @@ class SOM(object):
             data = self._data
 
         bmu = None
-        neighborhood = None
 
         # X2 is part of euclidean distance (x-y)^2 = x^2 +y^2 - 2xy that we use for each data row in bmu finding.
         # Since it is a fixed value we can skip it during bmu finding for each data point,
         # but later we need it calculate quantification error
         fixed_euclidean_x2 = np.einsum('ij,ij->i', data, data)
 
-        if verbose == 'on':
-            print 'radius_ini: %f , radius_final: %f, trainlen: %d' % (radiusin, radiusfin, trainlen)
+        logging.info(" radius_ini: %f , radius_final: %f, trainlen: %d\n" % (radiusin, radiusfin, trainlen))
 
         for i in range(trainlen):
+            t1 = time()
             neighborhood = self.neighborhood.calculate(self._distance_matrix, radius[i], self.codebook.nnodes)
 
-            t1 = time()
             bmu = self.find_bmu(data, njb=njob)
-
-            t2 = time()
             self.codebook.matrix = self.update_codebook_voronoi(data, bmu, neighborhood)
-            if verbose == 'on':
-                print ' updating nodes: ', round(time() - t2, 3)
 
-            if verbose == 'on':
-                qerror = (i+1, round(time() - t1, 3), np.mean(np.sqrt(bmu[1] + fixed_euclidean_x2)))
-                print " epoch: %d ---> elapsed time:  %f, quantization error: %f " % qerror
+            qerror = (i+1, round(time() - t1, 3), np.mean(np.sqrt(bmu[1] + fixed_euclidean_x2)))
+            logging.info(" epoch: %d ---> elapsed time:  %f, quantization error: %f\n" % qerror)
 
         bmu[1] = np.sqrt(bmu[1] + fixed_euclidean_x2)
         self._bmu = bmu
 
+    @timeit(logging.DEBUG)
     def find_bmu(self, input_matrix, njb=1):
         """
         Finds the best matching unit (bmu) for each input data from the input matrix. It does all at once parallelizing
         the calculation instead of going through each input and running it against the codebook.
 
         :param input_matrix: numpy matrix representing inputs as rows and features/dimension as cols
-        :param njob: number of jobs to parallelize the search
+        :param njb: number of jobs to parallelize the search
+        :returns: the best matching unit for each input
         """
         dlen = input_matrix.shape[0]
         y2 = np.einsum('ij,ij->i', self.codebook.matrix, self.codebook.matrix)
-
-        t_temp = time()
 
         parallelizer = Parallel(n_jobs=njb, pre_dispatch='3*n_jobs')
         chunk_bmu_finder = delayed(_chunk_based_bmu_find)
@@ -316,14 +324,12 @@ class SOM(object):
         col_chunk = lambda part: min((part+1)*dlen // njb, dlen)
 
         b = parallelizer(chunk_bmu_finder(input_matrix[row_chunk(i):col_chunk(i)], self.codebook.matrix, y2) for i in xrange(njb))
-
-        #print 'bmu finding: %f seconds ' %round(time() - t_temp, 3)
-        t1 = time()
         bmu = np.asarray(list(itertools.chain(*b))).T
-        #print 'bmu to array: %f seconds' %round(time() - t1, 3)
+
         del b
         return bmu
 
+    @timeit(logging.DEBUG)
     def update_codebook_voronoi(self, training_data, bmu, neighborhood):
         """
         Updates the weights of each node in the codebook that belongs to the bmu's neighborhood.
@@ -333,20 +339,12 @@ class SOM(object):
         som toolbox for Matlab by Helsinky university
 
         :param training_data: input matrix with input vectors as rows and vector features as cols
-        :param bmu: best matching unit for each input data
+        :param bmu: best matching unit for each input data. Has shape of (2, dlen) where first row has bmu indexes
         :param neighborhood: matrix representing the neighborhood of each bmu
 
         :returns: An updated codebook that incorporates the learnings from the input data
         """
-        # bmu has shape of 2, dlen, Where first row has bmu indexes
-        # we construct ud2 from precomputed UD2 : ud2 = UD2[bmu[0,:]]
-        # TODO: Comment above, ud2 is not used here
-
-        #fig = plt.hist(bmu[0],bins=100)
-        #plt.show()
-
-        inds = bmu[0].astype(int)
-        row = inds
+        row = bmu[0].astype(int)
         col = np.arange(self._dlen)
         val = np.tile(1, self._dlen)
         P = csr_matrix((val, (row, col)), shape=(self.codebook.nnodes, self._dlen))
@@ -394,7 +392,7 @@ class SOM(object):
         dimdata = data.shape[1]
 
         if dimdata == dim:
-            # data[:, target] == 0 mmmm whas this meant to be an assignment?
+            data[:, target] = 0
             data = self._normalizer.normalize_by(self.data_raw, data)
             data = data[:, indX]
 
@@ -407,7 +405,7 @@ class SOM(object):
 
     def predict(self, x_test, k=5, wt='distance'):
         """
-        Similar to SKlearn we assume that we have X_tr, Y_tr and X_test. Here it is assumed that Target is the last
+        Similar to SKlearn we assume that we have X_tr, Y_tr and X_test. Here it is assumed that target is the last
         column in the codebook and data has dim-1 columns
 
         :param x_test: input vector
@@ -457,12 +455,21 @@ class SOM(object):
 
         return out.astype(int)
 
-    def cluster(self, method='Kmeans', n_clusters=8):
+    def cluster(self, n_clusters=8):
         import sklearn.cluster as clust
-        return clust.KMeans(n_clusters=n_clusters).fit_predict(self._normalizer.denormalize_by(self.data_raw, self.codebook.matrix))
+        return clust.KMeans(n_clusters=n_clusters).fit_predict(self._normalizer.denormalize_by(self.data_raw,
+                                                                                               self.codebook.matrix))
 
     def predict_probability(self, data, target, k=5):
-        # here it is assumed that Target is the last column in the codebook #and data has dim-1 columns
+        """
+        Predicts probability of the input data to be target
+
+        :param data: data to predict, it is assumed that 'target' is the last column in the codebook,
+                     so data hould have dim-1 columns
+        :param target: target to predict probability
+        :param k: k parameter on KNeighborsRegressor
+        :returns: probability of data been target
+        """
         dim = self.codebook.matrix.shape[1]
         ind = np.arange(0, dim)
         indx = ind[ind != target]
@@ -477,7 +484,7 @@ class SOM(object):
         dimdata = data.shape[1]
 
         if dimdata == dim: 
-            #data[:,Target] == 0  # mmm assignment?
+            data[:, target] = 0
             data = self._normalizer.normalize_by(self.data_raw, data)
             data = data[:, indx]
 
