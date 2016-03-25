@@ -23,10 +23,10 @@ from scipy.sparse import csr_matrix
 from sklearn import neighbors
 from sklearn.externals.joblib import Parallel, delayed, load, dump
 
-from .decorators import *
-from .codebook import Codebook
-from .neighborhood import NeighborhoodFactory
-from .normalization import NormalizatorFactory
+from decorators import *
+from codebook import Codebook
+from neighborhood import NeighborhoodFactory
+from normalization import NormalizatorFactory
 
 
 class ComponentNamesError(Exception):
@@ -323,7 +323,7 @@ class SOM(object):
         row_chunk = lambda part: part * dlen // njb
         col_chunk = lambda part: min((part+1)*dlen // njb, dlen)
 
-        b = parallelizer(chunk_bmu_finder(input_matrix[row_chunk(i):col_chunk(i)], self.codebook.matrix, y2) for i in range(njb))
+        b = parallelizer(chunk_bmu_finder(input_matrix[row_chunk(i):col_chunk(i)], self.codebook.matrix, y2) for i in xrange(njb))
         bmu = np.asarray(list(itertools.chain(*b))).T
 
         del b

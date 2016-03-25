@@ -1,6 +1,6 @@
 import numpy as np
 from sklearn.decomposition import RandomizedPCA, PCA
-from .decorators import timeit
+from decorators import timeit
 
 
 class InvalidNodeIndexError(Exception):
@@ -21,8 +21,8 @@ class Codebook(object):
 
         elif 1 == len(mapsize):
             _size = [1, mapsize[0]]
-            print ('input was considered as the numbers of nodes')
-            print ('map size is [{dlen},{dlen}]'.format(dlen=int(mapsize[0]/2)))
+            print 'input was considered as the numbers of nodes'
+            print 'map size is [{dlen},{dlen}]'.format(dlen=int(mapsize[0]/2))
         else:
             raise InvalidMapsizeError("Mapsize is expected to be a 2 element list or a single int")
 
