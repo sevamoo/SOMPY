@@ -41,8 +41,7 @@ class MatplotView(View):
         self._close_fig()
         self._fig = plt.figure(figsize=(self.width, self.height))
         plt.title(self.title)
-        plt.axis('off')
-#         plt.axis('on' if self.show_axis else 'off')
+        plt.axis('on' if self.show_axis else 'off')
         plt.rc('font', **{'size': self.text_size})
 
     def save(self, filename, transparent=False, bbox_inches='tight', dpi=400):
