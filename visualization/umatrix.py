@@ -9,7 +9,7 @@ import scipy
 
 class UMatrixView(MatplotView):
 
-    def build_u_matrix(self, som, distance=1, row_normalized=True):
+    def build_u_matrix(self, som, distance=1, row_normalized=False):
         UD2 = som.calculate_map_dist()
         Umatrix = np.zeros((som.codebook.nnodes, 1))
         codebook = som.codebook.matrix
