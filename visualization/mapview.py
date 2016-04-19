@@ -8,12 +8,13 @@ import pandas as pd
 
 class MapView(MatplotView):
 
-    def _calculate_figure_params(self, som, which_dim):
+    def _calculate_figure_params(self, som, which_dim,col_sz):
         codebook = som._normalizer.denormalize_by(som.data_raw, som.codebook.matrix)
-        dim = som._dim
+        
         indtoshow, sV, sH = None, None, None
 
         if which_dim == 'all':
+            dim = som._dim
             indtoshow = np.arange(0, dim).T
             ratio = float(dim)/float(dim)
             ratio = np.max((.35, ratio))
@@ -33,27 +34,33 @@ class MapView(MatplotView):
             indtoshow = np.asarray(which_dim).T
             sH, sV = 16, 16*ratio*1
 
-        no_row_in_plot = dim/6 + 1  # 6 is arbitrarily selected
-        no_col_in_plot = dim if no_row_in_plot <= 1 else 6
+        no_row_in_plot = dim/col_sz + 1  # 6 is arbitrarily selected
+#         no_col_in_plot = dim if no_row_in_plot <= 1 else col_sz
+        if no_row_in_plot <=1:
+            no_col_in_plot = dim
+        else:
+            no_col_in_plot = col_sz
+        
         axisNum = 0
 
         width = sH
         height = sV
 
-        return width, height, indtoshow, no_row_in_plot, no_col_in_plot, axisNum
+        return width, height,indtoshow, no_row_in_plot, no_col_in_plot, axisNum
 
 
 class View2D(MapView):
 
-    def show(self, som, which_dim='all'):
-        self.width, self.height, indtoshow, no_row_in_plot, no_col_in_plot, axisNum = self._calculate_figure_params(som, which_dim)
+    def show(self, som, what='codebook', which_dim='all', CMAP=None, col_sz=None):
+        self.width, self.height, indtoshow, no_row_in_plot, no_col_in_plot, axisNum = self._calculate_figure_params(som, which_dim,col_sz)
         self.prepare()
         codebook = som.codebook.matrix
 
         norm = matplotlib.colors.normalize(vmin=np.mean(codebook.flatten())-1*np.std(codebook.flatten()),
                                            vmax=np.mean(codebook.flatten())+1*np.std(codebook.flatten()),
                                            clip=True)
-        while axisNum < som._dim:
+        
+        while axisNum <len(indtoshow):
             axisNum += 1
             ax = plt.subplot(no_row_in_plot, no_col_in_plot, axisNum)
             ind = int(indtoshow[axisNum-1])
@@ -71,19 +78,17 @@ class View2DPacked(MapView):
 
     def _set_axis(self, ax, msz0, msz1):
         plt.axis([0, msz0, 0, msz1])
-        ax.set_yticklabels([])
-        ax.set_xticklabels([])
-        ax.xaxis.set_ticks([i for i in range(0, msz1)])
-        ax.yaxis.set_ticks([i for i in range(0, msz0)])
-        ax.xaxis.set_ticklabels([])
-        ax.yaxis.set_ticklabels([])
-        ax.grid(True, linestyle='-', linewidth=0.5, color='k')
+        plt.axis('off')
+        ax.axis('off')
+        
 
     def show(self, som, what='codebook', which_dim='all', CMAP=None, col_sz=None):
-        self.width, self.height, indtoshow, no_row_in_plot, no_col_in_plot, axisNum = self._calculate_figure_params(som, which_dim)
+    	if col_sz == None:
+    		col_sz = 6
+        self.width, self.height, indtoshow, no_row_in_plot, no_col_in_plot, axisNum = self._calculate_figure_params(som, which_dim,col_sz)
         codebook = som.codebook.matrix
 
-        no_col_in_plot = som._dim if no_row_in_plot <= 1 else col_sz or no_col_in_plot
+#         no_col_in_plot = som._dim if no_row_in_plot <= 1 else col_sz or no_col_in_plot
         CMAP = CMAP or plt.cm.get_cmap('RdYlBu_r')
         msz0, msz1 = som.codebook.mapsize
 
@@ -93,15 +98,14 @@ class View2DPacked(MapView):
             self.width = no_col_in_plot*2.5*(1+w)
             self.height = no_row_in_plot*2.5*(1+h)
             self.prepare()
-
-            while axisNum < som._dim:
+			
+            while axisNum < len(indtoshow):
                 axisNum += 1
-
                 ax = self._fig.add_subplot(no_row_in_plot, no_col_in_plot, axisNum)
+                ax.axis('off')
                 ind = int(indtoshow[axisNum-1])
                 mp = codebook[:, ind].reshape(msz0, msz1)
                 plt.imshow(mp[::-1], norm=None, cmap=CMAP)
-
                 self._set_axis(ax, msz0, msz1)
 
         if what == 'cluster':
@@ -124,13 +128,13 @@ class View2DPacked(MapView):
 
 class View1D(MapView):
 
-    def show(self, som, what='codebook', which_dim='all'):
-        self.width, self.height, indtoshow, no_row_in_plot, no_col_in_plot, axisNum = self._calculate_figure_params(som, which_dim)
+    def show(self, som, what='codebook', which_dim='all', CMAP=None, col_sz=None):
+        self.width, self.height, indtoshow, no_row_in_plot, no_col_in_plot, axisNum = self._calculate_figure_params(som, which_dim,col_sz)
         self.prepare()
 
         codebook = som.codebook.matrix
 
-        while axisNum < som._dim:
+        while axisNum < len(indtoshow):
             axisNum += 1
             ax = plt.subplot(no_row_in_plot, no_col_in_plot, axisNum)
             ind = int(indtoshow[axisNum-1])
