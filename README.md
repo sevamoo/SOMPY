@@ -13,7 +13,12 @@ As much as possible, the structure of SOM is similar to somtoolbox in Matlab. It
 6- 1-d or 2-d SOM with only rectangular, planar grid. (works well in comparison with hexagonal shape, when I was checking in Matlab with somtoolbox).  
 7- Different methods for function approximation and predictions (mostly using Sklearn).
 
-I must say that I am a bit lazy for documentation, but below are few examples showing how to use the library. But there are more functionalities, which are not documented yet. I suggest you go through the code itself.
+Thanks @sebastiandev the library is now standardized in pythonic tradition. 
+Here you can see some basic examples, showing how to use the library
+http://nbviewer.jupyter.org/gist/sevamoo/ec0eb28229304f4575085397138ba5b1
+But I recommend you to go through the codes. There are several functionalities already implemented, but not documented.
+
+The following examples, need some modifications, since the library has been modified. However, it should be easy to figure out how to use them.
 
 http://bit.ly/1eZvaCM
 
@@ -27,3 +32,6 @@ http://bit.ly/1ujaD36
 
 For more information, you can contact me via sevamoo@gmail.com or svm@arch.ethz.ch
 
+Thanks a lot.
+Best
+Vahid
