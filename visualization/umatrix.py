@@ -42,18 +42,20 @@ class UMatrixView(MatplotView):
 
         if show_data:
             plt.scatter(coord[:, 1], coord[:, 0], s=2, alpha=1., c='Gray', marker='o', cmap='jet', linewidths=3, edgecolor='Gray')
-            
-            if labels:
-                if labels == True:
-                  labels = self._dlabel
-                for label, x, y in zip(labels, coord[:, 1], coord[:, 0]):
-                    plt.annotate(
-                        label, 
-                        xy = (x, y), xytext = (-20, 20),
-                        textcoords = 'offset points', ha = 'right', va = 'bottom',
-                        bbox = dict(boxstyle = 'round,pad=0.5', fc = 'yellow', alpha = 0.5),
-                        arrowprops = dict(arrowstyle = '->', connectionstyle = 'arc3,rad=0'))
             plt.axis('off')
+            
+        if labels:
+            if labels == True:
+              labels = self._dlabel
+            for label, x, y in zip(labels, coord[:, 1], coord[:, 0]):
+                plt.annotate(
+                    label, 
+                    xy = (x, y),
+                    horizontalalignment = 'center', verticalalignment = 'center'
+                    ) #, xytext = (-20, 20),
+      #                        textcoords = 'offset points', ha = 'right', va = 'bottom',
+      #                       bbox = dict(boxstyle = 'round,pad=0.5', fc = 'yellow', alpha = 0.5),
+      #                      arrowprops = dict(arrowstyle = '->', connectionstyle = 'arc3,rad=0'))
 
         ratio = float(msz[0])/(msz[0]+msz[1])
         fig.set_size_inches((1-ratio)*15, ratio*15)
