@@ -46,7 +46,7 @@ class UMatrixView(MatplotView):
             
         if labels:
             if labels == True:
-              labels = self._dlabel
+              labels = som.build_data_labels()
             for label, x, y in zip(labels, coord[:, 1], coord[:, 0]):
                 plt.annotate(
                     label, 
