@@ -48,14 +48,7 @@ class UMatrixView(MatplotView):
             if labels == True:
               labels = som.build_data_labels()
             for label, x, y in zip(labels, coord[:, 1], coord[:, 0]):
-                plt.annotate(
-                    label, 
-                    xy = (x, y),
-                    horizontalalignment = 'center', verticalalignment = 'center'
-                    ) #, xytext = (-20, 20),
-      #                        textcoords = 'offset points', ha = 'right', va = 'bottom',
-      #                       bbox = dict(boxstyle = 'round,pad=0.5', fc = 'yellow', alpha = 0.5),
-      #                      arrowprops = dict(arrowstyle = '->', connectionstyle = 'arc3,rad=0'))
+                plt.annotate(label, xy = (x, y), horizontalalignment = 'center', verticalalignment = 'center')
 
         ratio = float(msz[0])/(msz[0]+msz[1])
         fig.set_size_inches((1-ratio)*15, ratio*15)
