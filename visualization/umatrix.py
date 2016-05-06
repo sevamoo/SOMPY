@@ -23,12 +23,12 @@ class UMatrixView(MatplotView):
 
         return Umatrix.reshape(som.codebook.mapsize)
 
-    def show(self, som, distance2=1, row_normalized=False, show_data=True, contooor=True, blob=False):
+    def show(self, som, distance2=1, row_normalized=False, show_data=True, contooor=True, blob=False, labels = False):
         umat = self.build_u_matrix(som, distance=distance2, row_normalized=row_normalized)
         msz = som.codebook.mapsize
         proj = som.project_data(som.data_raw)
         coord = som.bmu_ind_to_xy(proj)
-
+        
         fig, ax = plt.subplots(1, 1)
         im = imshow(umat, cmap=plt.cm.get_cmap('RdYlBu_r'), alpha=1)
 
@@ -43,6 +43,12 @@ class UMatrixView(MatplotView):
         if show_data:
             plt.scatter(coord[:, 1], coord[:, 0], s=2, alpha=1., c='Gray', marker='o', cmap='jet', linewidths=3, edgecolor='Gray')
             plt.axis('off')
+            
+        if labels:
+            if labels == True:
+              labels = som.build_data_labels()
+            for label, x, y in zip(labels, coord[:, 1], coord[:, 0]):
+                plt.annotate(str(label), xy = (x, y), horizontalalignment = 'center', verticalalignment = 'center')
 
         ratio = float(msz[0])/(msz[0]+msz[1])
         fig.set_size_inches((1-ratio)*15, ratio*15)
