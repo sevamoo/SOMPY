@@ -152,7 +152,7 @@ class SOM(object):
     def data_labels(self):
         return self._dlabel
 
-    @data_labels.setter
+    # @data_labels.setter
     def data_labels(self, labels):
         """
         Set labels of the training data, it should be in the format of a list of strings
