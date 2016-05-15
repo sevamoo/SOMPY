@@ -1,7 +1,7 @@
 from logging.config import dictConfig
 import matplotlib
 
-matplotlib.use('Agg')  # Use whatever backend is available
+matplotlib.use('TkAgg')  # Use whatever backend is available
 
 dictConfig({
     "version": 1,
@@ -26,6 +26,6 @@ dictConfig({
 
 
 
-from sompy import SOMFactory
-from visualization import *
+from .sompy import SOMFactory
+from .visualization import *
 

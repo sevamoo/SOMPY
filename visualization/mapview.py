@@ -83,8 +83,8 @@ class View2DPacked(MapView):
         
 
     def show(self, som, what='codebook', which_dim='all', CMAP=None, col_sz=None):
-    	if col_sz == None:
-    		col_sz = 6
+        if col_sz == None:
+            col_sz = 6
         self.width, self.height, indtoshow, no_row_in_plot, no_col_in_plot, axisNum = self._calculate_figure_params(som, which_dim,col_sz)
         codebook = som.codebook.matrix
 
@@ -98,7 +98,7 @@ class View2DPacked(MapView):
             self.width = no_col_in_plot*2.5*(1+w)
             self.height = no_row_in_plot*2.5*(1+h)
             self.prepare()
-			
+
             while axisNum < len(indtoshow):
                 axisNum += 1
                 ax = self._fig.add_subplot(no_row_in_plot, no_col_in_plot, axisNum)
