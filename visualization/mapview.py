@@ -91,7 +91,7 @@ class View2DPacked(MapView):
 #         no_col_in_plot = som._dim if no_row_in_plot <= 1 else col_sz or no_col_in_plot
         CMAP = CMAP or plt.cm.get_cmap('RdYlBu_r')
         msz0, msz1 = som.codebook.mapsize
-		compname = som.component_names
+	compname = som.component_names
         if what == 'codebook':
             h = .1
             w = .1
