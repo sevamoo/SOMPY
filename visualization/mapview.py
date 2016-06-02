@@ -91,7 +91,7 @@ class View2DPacked(MapView):
 #         no_col_in_plot = som._dim if no_row_in_plot <= 1 else col_sz or no_col_in_plot
         CMAP = CMAP or plt.cm.get_cmap('RdYlBu_r')
         msz0, msz1 = som.codebook.mapsize
-
+		compname = som.component_names
         if what == 'codebook':
             h = .1
             w = .1
@@ -107,6 +107,11 @@ class View2DPacked(MapView):
                 mp = codebook[:, ind].reshape(msz0, msz1)
                 plt.imshow(mp[::-1], norm=None, cmap=CMAP)
                 self._set_axis(ax, msz0, msz1)
+               
+                if self.show_text == True:
+                	plt.title(compname[0][ind])
+                	font = {'size'   : self.text_size}
+                	plt.rc('font', **font)
 
         if what == 'cluster':
             codebook = som.cluster_labels if hasattr(som, 'cluster_labels') else som.cluster()
@@ -122,6 +127,8 @@ class View2DPacked(MapView):
             plt.imshow(mp[::-1], cmap=CMAP)
 
             self._set_axis(ax, msz0, msz1)
+            
+   
 
         plt.subplots_adjust(hspace=h, wspace=w)
 
