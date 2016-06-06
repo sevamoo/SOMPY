@@ -23,10 +23,10 @@ from scipy.sparse import csr_matrix
 from sklearn import neighbors
 from sklearn.externals.joblib import Parallel, delayed, load, dump
 
-from decorators import *
-from codebook import Codebook
-from neighborhood import NeighborhoodFactory
-from normalization import NormalizatorFactory
+from .decorators import *
+from .codebook import Codebook
+from .neighborhood import NeighborhoodFactory
+from .normalization import NormalizatorFactory
 
 
 class ComponentNamesError(Exception):
