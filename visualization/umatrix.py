@@ -1,5 +1,6 @@
 import matplotlib
 from .view import MatplotView
+matplotlib.use('TkAgg')
 from matplotlib import pyplot as plt
 from pylab import meshgrid, cm, imshow, contour, clabel, colorbar, axis, title, show
 from math import sqrt
