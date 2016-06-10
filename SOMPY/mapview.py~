@@ -35,6 +35,7 @@ class MapView(MatplotView):
             sH, sV = 16, 16*ratio*1
 
         no_row_in_plot = dim/col_sz + 1  # 6 is arbitrarily selected
+#         no_col_in_plot = dim if no_row_in_plot <= 1 else col_sz
         if no_row_in_plot <=1:
             no_col_in_plot = dim
         else:
@@ -69,7 +70,7 @@ class View2D(MapView):
             ax.set_yticklabels([])
             ax.set_xticklabels([])
             plt.colorbar(pl)
-            
+
         plt.show()
 
 
@@ -82,22 +83,22 @@ class View2DPacked(MapView):
         
 
     def show(self, som, what='codebook', which_dim='all', CMAP=None, col_sz=None):
-        if col_sz == None:
-            col_sz = 6
+    	if col_sz == None:
+    		col_sz = 6
         self.width, self.height, indtoshow, no_row_in_plot, no_col_in_plot, axisNum = self._calculate_figure_params(som, which_dim,col_sz)
         codebook = som.codebook.matrix
 
 #         no_col_in_plot = som._dim if no_row_in_plot <= 1 else col_sz or no_col_in_plot
         CMAP = CMAP or plt.cm.get_cmap('RdYlBu_r')
         msz0, msz1 = som.codebook.mapsize
-        compname = som.component_names
+	compname = som.component_names
         if what == 'codebook':
             h = .1
             w = .1
             self.width = no_col_in_plot*2.5*(1+w)
             self.height = no_row_in_plot*2.5*(1+h)
             self.prepare()
-
+			
             while axisNum < len(indtoshow):
                 axisNum += 1
                 ax = self._fig.add_subplot(no_row_in_plot, no_col_in_plot, axisNum)
@@ -108,9 +109,9 @@ class View2DPacked(MapView):
                 self._set_axis(ax, msz0, msz1)
                
                 if self.show_text == True:
-                    plt.title(compname[0][ind])
-                    font = {'size'   : self.text_size}
-                    plt.rc('font', **font)
+                	plt.title(compname[0][ind])
+                	font = {'size'   : self.text_size}
+                	plt.rc('font', **font)
 
         if what == 'cluster':
             codebook = som.cluster_labels if hasattr(som, 'cluster_labels') else som.cluster()
