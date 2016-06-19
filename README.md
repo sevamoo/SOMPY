@@ -11,6 +11,12 @@ As much as possible, the structure of SOM is similar to somtoolbox in Matlab. It
 6- 1-d or 2-d SOM with only rectangular, planar grid. (works well in comparison with hexagonal shape, when I was checking in Matlab with somtoolbox).
 7- Different methods for function approximation and predictions (mostly using Sklearn).
 
+
+
+Installation:
+Download and extract this repo. Copy the extracted folder to the 'site-packages' folder of your Python installation. For example 'C:Python3\Lib\site-packages'.
+You can then import SOMPY.
+
 Many thanks to @sebastiandev, the library is now standardized in a pythonic tradition. Here you can see some basic examples, showing how to use the library http://nbviewer.jupyter.org/gist/sevamoo/ec0eb28229304f4575085397138ba5b1 But I recommend you to go through the codes. There are several functionalities already implemented, but not documented.
 
 The following examples, need some modifications, since the library has been modified. However, it should be easy to figure out how to use them.
