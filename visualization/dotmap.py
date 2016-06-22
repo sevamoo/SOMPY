@@ -63,5 +63,5 @@ class DotMapView(MatplotView):
             self.plot(data, coords, msz0, msz1, colormap, data.shape[0], len(which_dim), rows, cols)
 
         plt.tight_layout()
-        plt.subplots_adjust(hspace=.16, swspace=.05)
+        plt.subplots_adjust(hspace=.16, wspace=.05)
 
