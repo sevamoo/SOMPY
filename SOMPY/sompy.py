@@ -457,9 +457,8 @@ class SOM(object):
 
     def cluster(self, n_clusters=8):
         import sklearn.cluster as clust
-        cl_labels = clust.KMeans(n_clusters=n_clusters).fit_predict(self._normalizer.denormalize_by(self.data_raw,self.codebook.matrix))
-        self.cluster_labels =  cl_labels
-        return cl_labels
+        return clust.KMeans(n_clusters=n_clusters).fit_predict(self._normalizer.denormalize_by(self.data_raw,self.codebook.matrix))
+    
 
     def predict_probability(self, data, target, k=5):
         """
