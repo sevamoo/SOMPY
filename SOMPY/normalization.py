@@ -36,10 +36,12 @@ class VarianceNormalizator(Normalizator):
 
     def normalize(self, data):
         me, st = self._mean_and_standard_dev(data)
+        st[st==0] =1 #prevent: when sd = 0, normalized result = NaN
         return (data-me)/st
 
     def normalize_by(self, raw_data, data):
         me, st = self._mean_and_standard_dev(raw_data)
+        st[st==0] =1 #prevent: when sd = 0, normalized result = NaN
         return (data-me)/st
 
     def denormalize_by(self, data_by, n_vect):
