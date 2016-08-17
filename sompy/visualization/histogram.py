@@ -13,24 +13,30 @@ class Hist2d(MatplotView):
         X, Y = np.meshgrid(x, y)
 
         if what == 'train':
-            a = plt.hist2d(x, y, bins=(mapsize[1], mapsize[0]), alpha=.0, cmap=cm.jet)
-            area = a[0].T*12
+            a = plt.hist2d(x, y, bins=(mapsize[1], mapsize[0]), alpha=.0,
+                           cmap=cm.jet)
+            area = a[0].T * 12
             plt.scatter(data_coords[:, 1], mapsize[0] - .5 - data_coords[:, 0],
-                        s=area.flatten(), alpha=.9, c='None', marker='o', cmap='jet', linewidths=3, edgecolor='r')
+                        s=area.flatten(), alpha=.9, c='None', marker='o',
+                        cmap='jet', linewidths=3, edgecolor='r')
 
         else:
-            a = plt.hist2d(x, y, bins=(mapsize[1], mapsize[0]), alpha=.0, cmap=cm.jet, norm=LogNorm())
+            a = plt.hist2d(x, y, bins=(mapsize[1], mapsize[0]), alpha=.0,
+                           cmap=cm.jet, norm=LogNorm())
             area = a[0].T*50
-            plt.scatter(data_coords[:, 1] + .5, mapsize[0] - .5 - data_coords[:, 0],
-                        s=area, alpha=0.9, c='None', marker='o', cmap='jet', linewidths=3, edgecolor='r')
+            plt.scatter(data_coords[:, 1] + .5,
+                        mapsize[0] - .5 - data_coords[:, 0],
+                        s=area, alpha=0.9, c='None', marker='o', cmap='jet',
+                        linewidths=3, edgecolor='r')
             plt.scatter(data_coords[:, 1]+.5, mapsize[0]-.5-data_coords[:, 0],
-                        s=area, alpha=0.2, c='b', marker='o', cmap='jet', linewidths=3, edgecolor='r')
+                        s=area, alpha=0.2, c='b', marker='o', cmap='jet',
+                        linewidths=3, edgecolor='r')
 
         plt.xlim(0, mapsize[1])
         plt.ylim(0, mapsize[0])
 
     def show(self, som, data=None):
-        #First Step: show the hitmap of all the training data
+        # First Step: show the hitmap of all the training data
         coord = som.bmu_ind_to_xy(som.project_data(som.data_raw))
 
         self.prepare()
@@ -42,11 +48,12 @@ class Hist2d(MatplotView):
         ax.yaxis.set_ticklabels([])
         ax.grid(True, linestyle='-', linewidth=.5)
 
-        self._fill_hist(coord[:, 1], coord[:, 0], som.codebook.mapsize, som.bmu_ind_to_xy(np.arange(som.codebook.nnodes)))
+        self._fill_hist(coord[:, 1], coord[:, 0], som.codebook.mapsize,
+                        som.bmu_ind_to_xy(np.arange(som.codebook.nnodes)))
 
         if data:
             coord_d = som.bmu_ind_to_xy(som.project_data(data))
-            self._fill_hist(coord[:, 1], coord[:, 0], som.codebook.mapsize, coord_d, 'data')
+            self._fill_hist(coord[:, 1], coord[:, 0], som.codebook.mapsize,
+                            coord_d, 'data')
 
         plt.show()
-
