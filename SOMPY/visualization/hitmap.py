@@ -1,4 +1,3 @@
-import matplotlib
 from .view import MatplotView
 from matplotlib import pyplot as plt
 import numpy as np
@@ -11,7 +10,7 @@ class HitMapView(MatplotView):
             ax.annotate(txt, (cents[i, 1], cents[i, 0]), size=10, va="center")
 
     def show(self, som, data=None):
-        codebook = som.cluster_labels if hasattr(som, 'cluster_labels') else som.cluster()
+        codebook = getattr(som, 'cluster_labels', som.cluster())
         msz = som.codebook.mapsize
 
         self.prepare()
@@ -30,4 +29,3 @@ class HitMapView(MatplotView):
         plt.show()
 
         return cents
-

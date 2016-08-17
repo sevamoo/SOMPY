@@ -2,6 +2,8 @@ import numpy as np
 import inspect
 import sys
 
+small = .000000000001
+
 
 class NeighborhoodFactory(object):
 
@@ -12,7 +14,8 @@ class NeighborhoodFactory(object):
                 if hasattr(obj, 'name') and neighborhood_func == obj.name:
                     return obj()
         else:
-            raise Exception("Unsupported neighborhood function '%s'" % neighborhood_func)
+            raise Exception(
+                "Unsupported neighborhood function '%s'" % neighborhood_func)
 
 
 class GaussianNeighborhood(object):
@@ -38,7 +41,8 @@ class BubbleNeighborhood(object):
             c[a-b >= 0] = 1
             return c
 
-        return l(radius, np.sqrt(distance_matrix.flatten())).reshape(dim, dim) + .000000000001
+        return l(radius,
+                 np.sqrt(distance_matrix.flatten())).reshape(dim, dim) + small
 
     def __call__(self, *args, **kwargs):
         return self.calculate(*args)
