@@ -39,7 +39,7 @@ The following examples, need some modifications, since the library has been modi
 - [Notebook 4]( http://vahidmoosavi.com/2014/02/18/a-self-organizing-map-som-package-in-python-sompy/)
 - [Notebook 5](http://bit.ly/1ujaD36)
 
-### References
+### Citation
 
 There is no published paper about this library. However if possible, please cite the library as follows:
 
