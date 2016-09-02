@@ -1,1 +1,1 @@
-import dotmap, histogram, hitmap, mapview, umatrix
+from . import dotmap, histogram, hitmap, mapview, umatrix
