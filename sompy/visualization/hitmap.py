@@ -10,7 +10,13 @@ class HitMapView(MatplotView):
             ax.annotate(txt, (cents[i, 1], cents[i, 0]), size=10, va="center")
 
     def show(self, som, data=None):
-        codebook = getattr(som, 'cluster_labels', som.cluster())
+
+        try:
+            codebook = getattr(som, 'cluster_labels')
+        except:
+            codebook = som.cluster()
+
+        # codebook = getattr(som, 'cluster_labels', som.cluster())
         msz = som.codebook.mapsize
 
         self.prepare()

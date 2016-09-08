@@ -118,7 +118,10 @@ class View2DPacked(MapView):
                     plt.rc('font', **font)
 
         if what == 'cluster':
-            codebook = getattr(som, 'cluster_labels', som.cluster())
+            try:
+                codebook = getattr(som, 'cluster_labels')
+            except:
+                codebook = som.cluster()
 
             h = .2
             w = .001
