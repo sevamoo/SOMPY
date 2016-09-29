@@ -57,6 +57,13 @@ class View2D(MapView):
         self.prepare()
         codebook = som.codebook.matrix
 
+        if which_dim == 'all':
+            names = som._component_names[0]
+        elif type(which_dim) == int:
+            names = [som._component_names[0][which_dim]]
+        elif type(which_dim) == list:
+            names = som._component_names[0][which_dim]
+
         norm = matplotlib.colors.normalize(
             vmin=np.mean(codebook.flatten()) - 1 * np.std(codebook.flatten()),
             vmax=np.mean(codebook.flatten()) + 1 * np.std(codebook.flatten()),
@@ -70,6 +77,7 @@ class View2D(MapView):
                                           som.codebook.mapsize[1])
             pl = plt.pcolor(mp[::-1], norm=norm)
             plt.axis([0, som.codebook.mapsize[0], 0, som.codebook.mapsize[1]])
+            plt.title(names[axis_num - 1])
             ax.set_yticklabels([])
             ax.set_xticklabels([])
             plt.colorbar(pl)
