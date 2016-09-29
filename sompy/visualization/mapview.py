@@ -57,7 +57,7 @@ class View2D(MapView):
         self.prepare()
         codebook = som.codebook.matrix
 
-        norm = matplotlib.colors.normalize(
+        norm = matplotlib.colors.Normalize(
             vmin=np.mean(codebook.flatten()) - 1 * np.std(codebook.flatten()),
             vmax=np.mean(codebook.flatten()) + 1 * np.std(codebook.flatten()),
             clip=True)
