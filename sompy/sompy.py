@@ -326,7 +326,7 @@ class SOM(object):
         self._bmu = bmu
 
     @timeit(logging.DEBUG)
-    def find_bmu(self, input_matrix, njb=1):
+    def find_bmu(self, input_matrix, njb=1, nth=1):
         """
         Finds the best matching unit (bmu) for each input data from the input
         matrix. It does all at once parallelizing the calculation instead of
@@ -351,9 +351,8 @@ class SOM(object):
 
         b = parallelizer(
             chunk_bmu_finder(input_matrix[row_chunk(i):col_chunk(i)],
-                             self.codebook.matrix, y2) for i in range(njb))
+                             self.codebook.matrix, y2, nth=nth) for i in range(njb))
         bmu = np.asarray(list(itertools.chain(*b))).T
-
         del b
         return bmu
 
@@ -583,13 +582,20 @@ class SOM(object):
 
         return weights, ind
 
+    def calculate_topographic_error(self):
+        bmus1 = self.find_bmu(self.data_raw, njb=1, nth=1)
+        bmus2 = self.find_bmu(self.data_raw, njb=1, nth=2)
+        bmus_gap = np.abs((self.bmu_ind_to_xy(np.array(bmus1[0]))[:, 0:2] - self.bmu_ind_to_xy(np.array(bmus2[0]))[:, 0:2]).sum(axis=1))
+        return np.mean(bmus_gap != 1)
+
+
 
 # Since joblib.delayed uses Pickle, this method needs to be a top level
 # method in order to be pickled
 # Joblib is working on adding support for cloudpickle or dill which will allow
 # class methods to be pickled
 # when that that comes out we can move this to SOM class
-def _chunk_based_bmu_find(input_matrix, codebook, y2):
+def _chunk_based_bmu_find(input_matrix, codebook, y2, nth=1):
     """
     Finds the corresponding bmus to the input matrix.
 
@@ -618,8 +624,11 @@ def _chunk_based_bmu_find(input_matrix, codebook, y2):
         d = np.dot(codebook, ddata.T)
         d *= -2
         d += y2.reshape(nnodes, 1)
-        bmu[low:high+1, 0] = np.argmin(d, axis=0)
-        bmu[low:high+1, 1] = np.min(d, axis=0)
+        bmu[low:high+1, 0] = np.argpartition(d, nth, axis=0)[nth-1]
+        bmu[low:high+1, 1] = np.partition(d, nth, axis=0)[nth-1]
         del ddata
 
     return bmu
+
+
+
