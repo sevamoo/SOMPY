@@ -14,24 +14,30 @@ class MapView(MatplotView):
 
         if which_dim == 'all':
             dim = som._dim
+            row_sz = np.ceil(float(dim) / col_sz)
+            msz_row, msz_col = som.codebook.mapsize
+            ratio_hitmap = msz_row / float(msz_col)
+            ratio_fig = row_sz / float(col_sz)
             indtoshow = np.arange(0, dim).T
-            ratio = float(dim)/float(dim)
-            ratio = np.max((.35, ratio))
-            sH, sV = 16, 16*ratio*1
+            sH, sV = 16, 16*ratio_fig*ratio_hitmap
 
         elif type(which_dim) == int:
             dim = 1
+            msz_row, msz_col = som.codebook.mapsize
+            ratio_hitmap = msz_row / float(msz_col)
             indtoshow = np.zeros(1)
             indtoshow[0] = int(which_dim)
-            sH, sV = 6, 6
+            sH, sV = 16, 16 * ratio_hitmap
 
         elif type(which_dim) == list:
             max_dim = codebook.shape[1]
             dim = len(which_dim)
-            ratio = float(dim)/float(max_dim)
-            ratio = np.max((.35, ratio))
+            row_sz = np.ceil(float(dim) / col_sz)
+            msz_row, msz_col = som.codebook.mapsize
+            ratio_hitmap = msz_row / float(msz_col)
+            ratio_fig = row_sz / float(col_sz)
             indtoshow = np.asarray(which_dim).T
-            sH, sV = 16, 16*ratio*1
+            sH, sV = 16, 16*ratio_fig*ratio_hitmap
 
         no_row_in_plot = dim / col_sz + 1  # 6 is arbitrarily selected
         if no_row_in_plot <= 1:
@@ -69,7 +75,7 @@ class View2D(MapView):
             mp = codebook[:, ind].reshape(som.codebook.mapsize[0],
                                           som.codebook.mapsize[1])
             pl = plt.pcolor(mp[::-1], norm=norm)
-            plt.axis([0, som.codebook.mapsize[0], 0, som.codebook.mapsize[1]])
+            plt.axis([0, som.codebook.mapsize[1], 0, som.codebook.mapsize[0]])
             ax.set_yticklabels([])
             ax.set_xticklabels([])
             plt.colorbar(pl)
