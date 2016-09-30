@@ -193,7 +193,16 @@ class SOM(object):
         return distance_matrix
 
     @timeit()
-    def train(self, n_job=1, shared_memory=False, verbose='info'):
+    def train(self,
+              n_job=1,
+              shared_memory=False,
+              verbose='info',
+              train_rough_len=None,
+              train_rough_radiusin=None,
+              train_rough_radiusfin=None,
+              train_finetune_len=None,
+              train_finetune_radiusin=None,
+              train_finetune_radiusfin=None):
         """
         Trains the som
 
@@ -227,8 +236,10 @@ class SOM(object):
         elif self.initialization == 'pca':
             self.codebook.pca_linear_initialization(self._data)
 
-        self.rough_train(njob=n_job, shared_memory=shared_memory)
-        self.finetune_train(njob=n_job, shared_memory=shared_memory)
+        self.rough_train(njob=n_job, shared_memory=shared_memory, trainlen=train_rough_len,
+                         radiusin=train_rough_radiusin, radiusfin=train_rough_radiusfin)
+        self.finetune_train(njob=n_job, shared_memory=shared_memory, trainlen=train_finetune_len,
+                            radiusin=train_finetune_radiusin, radiusfin=train_finetune_radiusfin)
 
         logging.debug(
             " --------------------------------------------------------------")
@@ -246,39 +257,37 @@ class SOM(object):
 
         return ms, mpd
 
-    def rough_train(self, njob=1, shared_memory=False):
+    def rough_train(self, njob=1, shared_memory=False, trainlen=None, radiusin=None, radiusfin=None):
         logging.info(" Rough training...")
 
         ms, mpd = self._calculate_ms_and_mpd()
 
-        trainlen, radiusin, radiusfin = int(np.ceil(30*mpd)), None, None
+        trainlen = int(np.ceil(30*mpd)) if not trainlen else trainlen
 
         if self.initialization == 'random':
-            radiusin = max(1, np.ceil(ms/3.))
-            radiusfin = max(1, radiusin/6.)
+            radiusin = max(1, np.ceil(ms/3.)) if not radiusin else radiusin
+            radiusfin = max(1, radiusin/6.) if not radiusfin else radiusfin
 
         elif self.initialization == 'pca':
-            radiusin = max(1, np.ceil(ms/8.))
-            radiusfin = max(1, radiusin/4.)
+            radiusin = max(1, np.ceil(ms/8.)) if not radiusin else radiusin
+            radiusfin = max(1, radiusin/4.) if not radiusfin else radiusfin
 
         self._batchtrain(trainlen, radiusin, radiusfin, njob, shared_memory)
 
-    def finetune_train(self, njob=1, shared_memory=False):
+    def finetune_train(self, njob=1, shared_memory=False, trainlen=None, radiusin=None, radiusfin=None):
         logging.info(" Finetune training...")
 
         ms, mpd = self._calculate_ms_and_mpd()
 
-        trainlen, radiusin, radiusfin = None, None, None
-
         if self.initialization == 'random':
-            trainlen = int(np.ceil(50*mpd))
-            radiusin = max(1, ms/12.)  # from radius fin in rough training
-            radiusfin = max(1, radiusin/25.)
+            trainlen = int(np.ceil(50*mpd)) if not trainlen else trainlen
+            radiusin = max(1, ms/12.)  if not radiusin else radiusin # from radius fin in rough training
+            radiusfin = max(1, radiusin/25.) if not radiusfin else radiusfin
 
         elif self.initialization == 'pca':
-            trainlen = int(np.ceil(40*mpd))
-            radiusin = max(1, np.ceil(ms/8.)/4)
-            radiusfin = 1  # max(1, ms/128)
+            trainlen = int(np.ceil(40*mpd)) if not trainlen else trainlen
+            radiusin = max(1, np.ceil(ms/8.)/4) if not radiusin else radiusin
+            radiusfin = 1 if not radiusfin else radiusfin # max(1, ms/128)
 
         self._batchtrain(trainlen, radiusin, radiusfin, njob, shared_memory)
 
