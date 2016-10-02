@@ -57,21 +57,23 @@ class MapView(MatplotView):
 class View2D(MapView):
 
     def show(self, som, what='codebook', which_dim='all', cmap=None,
-             col_sz=None):
+             col_sz=None, desnormalize=False):
         (self.width, self.height, indtoshow, no_row_in_plot, no_col_in_plot,
          axis_num) = self._calculate_figure_params(som, which_dim, col_sz)
         self.prepare()
-        codebook = som.codebook.matrix
-
-        norm = matplotlib.colors.Normalize(
-            vmin=np.mean(codebook.flatten()) - 1 * np.std(codebook.flatten()),
-            vmax=np.mean(codebook.flatten()) + 1 * np.std(codebook.flatten()),
-            clip=True)
+        if not desnormalize:
+            codebook = som.codebook.matrix
+        else:
+            codebook = som._normalizer.denormalize_by(som.data_raw, som.codebook.matrix)
 
         while axis_num < len(indtoshow):
             axis_num += 1
             ax = plt.subplot(no_row_in_plot, no_col_in_plot, axis_num)
             ind = int(indtoshow[axis_num-1])
+            norm = matplotlib.colors.Normalize(
+                vmin=np.mean(codebook[:, ind].flatten()) - 1 * np.std(codebook[:, ind].flatten()),
+                vmax=np.mean(codebook[:, ind].flatten()) + 1 * np.std(codebook[:, ind].flatten()),
+                clip=True)
             mp = codebook[:, ind].reshape(som.codebook.mapsize[0],
                                           som.codebook.mapsize[1])
             pl = plt.pcolor(mp[::-1], norm=norm)
