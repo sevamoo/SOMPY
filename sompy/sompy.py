@@ -16,6 +16,8 @@ import logging
 import numpy as np
 
 from time import time
+from multiprocessing.dummy import Pool
+from multiprocessing import cpu_count
 from scipy.sparse import csr_matrix
 from sklearn import neighbors
 from sklearn.externals.joblib import Parallel, delayed, load, dump
@@ -348,9 +350,11 @@ class SOM(object):
         """
         dlen = input_matrix.shape[0]
         y2 = np.einsum('ij,ij->i', self.codebook.matrix, self.codebook.matrix)
+        if njb == -1:
+            njb = cpu_count()
 
-        parallelizer = Parallel(n_jobs=njb, pre_dispatch='3*n_jobs')
-        chunk_bmu_finder = delayed(_chunk_based_bmu_find)
+        pool = Pool(njb)
+        chunk_bmu_finder = _chunk_based_bmu_find
 
         def row_chunk(part):
             return part * dlen // njb
@@ -358,9 +362,10 @@ class SOM(object):
         def col_chunk(part):
             return min((part+1)*dlen // njb, dlen)
 
-        b = parallelizer(
-            chunk_bmu_finder(input_matrix[row_chunk(i):col_chunk(i)],
-                             self.codebook.matrix, y2, nth=nth) for i in range(njb))
+        chunks = [input_matrix[row_chunk(i):col_chunk(i)] for i in range(njb)]
+        b = pool.map(lambda chk: chunk_bmu_finder(chk, self.codebook.matrix, y2, nth=nth), chunks)
+        pool.close()
+        pool.join()
         bmu = np.asarray(list(itertools.chain(*b))).T
         del b
         return bmu
