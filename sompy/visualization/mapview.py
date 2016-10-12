@@ -61,10 +61,19 @@ class View2D(MapView):
         (self.width, self.height, indtoshow, no_row_in_plot, no_col_in_plot,
          axis_num) = self._calculate_figure_params(som, which_dim, col_sz)
         self.prepare()
+
         if not desnormalize:
             codebook = som.codebook.matrix
         else:
             codebook = som._normalizer.denormalize_by(som.data_raw, som.codebook.matrix)
+
+        if which_dim == 'all':
+            names = som._component_names[0]
+        elif type(which_dim) == int:
+            names = [som._component_names[0][which_dim]]
+        elif type(which_dim) == list:
+            names = som._component_names[0][which_dim]
+
 
         while axis_num < len(indtoshow):
             axis_num += 1
@@ -78,6 +87,7 @@ class View2D(MapView):
                                           som.codebook.mapsize[1])
             pl = plt.pcolor(mp[::-1], norm=norm)
             plt.axis([0, som.codebook.mapsize[1], 0, som.codebook.mapsize[0]])
+            plt.title(names[axis_num - 1])
             ax.set_yticklabels([])
             ax.set_xticklabels([])
             plt.colorbar(pl)

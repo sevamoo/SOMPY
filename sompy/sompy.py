@@ -46,7 +46,8 @@ class SOMFactory(object):
               initialization='pca',
               neighborhood='gaussian',
               training='batch',
-              name='sompy'):
+              name='sompy',
+              component_names=None):
         """
         :param data: data to be clustered, represented as a matrix of n rows,
             as inputs and m cols as input features
@@ -87,7 +88,7 @@ class SOMFactory(object):
         neighborhood_calculator = NeighborhoodFactory.build(neighborhood)
 
         return SOM(data, neighborhood_calculator, normalizer, mapsize, mask,
-                   mapshape, lattice, initialization, training, name)
+                   mapshape, lattice, initialization, training, name, component_names)
 
 
 class SOM(object):
@@ -102,7 +103,8 @@ class SOM(object):
                  lattice='rect',
                  initialization='pca',
                  training='batch',
-                 name='sompy'):
+                 name='sompy',
+                 component_names=None):
         """
         Self Organizing Map
 
@@ -134,8 +136,7 @@ class SOM(object):
         self.mask = mask or np.ones([1, self._dim])
         self.codebook = Codebook(mapsize, lattice)
         self.training = training
-
-        self._component_names = self.build_component_names()
+        self._component_names = self.build_component_names() if component_names is None else [component_names]
         self._distance_matrix = self.calculate_map_dist()
 
     @property
