@@ -45,15 +45,16 @@ There is no published paper about this library. However if possible, please cite
 
 ```
 Main Contributers:
-**Vahid Moosavi** @sevamoo
-**Sebastian Packmann** @sebastiandev
-**Iván Vallés** @ivallesp 
+Vahid Moosavi @sevamoo
+Sebastian Packmann @sebastiandev
+Iván Vallés @ivallesp 
 ```
 
 
-For more information, you can contact me via sevamoo@gmail.com or svm@arch.ethz.ch
+For more information, you can contact me via sevamoo@gmail.com or svm@arch.ethz.ch, but please report an issue first.
 
 
 
 
-Thanks a lot. Best Vahid
+Thanks a lot. 
+Best Vahid Moosavi
