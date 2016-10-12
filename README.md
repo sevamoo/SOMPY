@@ -45,10 +45,9 @@ There is no published paper about this library. However if possible, please cite
 
 ```
 Main Contributers:
-Vahid Moosavi @sevamoo
-Sebastian Packmann @sebastiandev
-Iván Vallés @ivallesp 
-, SOMPY: A Self Organizing Map Library in Python, 2015, available online:https://github.com/sevamoo/SOMPY.
+**Vahid Moosavi** @sevamoo
+**Sebastian Packmann** @sebastiandev
+**Iván Vallés** @ivallesp 
 ```
 
 
