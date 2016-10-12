@@ -40,7 +40,7 @@ class SOMFactory(object):
 
     @staticmethod
     def build(data,
-              mapsize,
+              mapsize=None,
               mask=None,
               mapshape='planar',
               lattice='rect',
@@ -136,6 +136,7 @@ class SOM(object):
         self.mapshape = mapshape
         self.initialization = initialization
         self.mask = mask or np.ones([1, self._dim])
+        mapsize = self.calculate_map_size(lattice) if not mapsize else mapsize
         self.codebook = Codebook(mapsize, lattice)
         self.training = training
         self._component_names = self.build_component_names() if component_names is None else [component_names]
@@ -603,6 +604,43 @@ class SOM(object):
         bmus_gap = np.abs((self.bmu_ind_to_xy(np.array(bmus1[0]))[:, 0:2] - self.bmu_ind_to_xy(np.array(bmus2[0]))[:, 0:2]).sum(axis=1))
         return np.mean(bmus_gap != 1)
 
+    def calculate_map_size(self, lattice):
+        """
+        :lattice: 'rect' or 'hex'
+        Calculates the optimal map size given a dataset using eigenvalues and eigenvectors. Matlab ported
+        :return: map sizes
+        """
+        D = self.data_raw
+        dlen = D.shape[0]
+        dim = D.shape[1]
+        munits = np.ceil(5 * (dlen ** 0.5))
+        A = np.ndarray(shape=[dim, dim]) + np.Inf
+
+        for i in range(dim):
+            D[:, i] = D[:, i] - np.mean(D[np.isfinite(D[:, i]), i])
+
+        for i in range(dim):
+            for j in range(dim):
+                c = D[:, i] * D[:, j]
+                c = c[np.isfinite(c)]
+                A[i, j] = sum(c) / len(c)
+                A[j, i] = A[i, j]
+
+        VS = np.linalg.eig(A)
+        eigval = sorted(np.linalg.eig(A)[0])
+        if eigval[-1] == 0 or eigval[-2] * munits < eigval[-1]:
+            ratio = 1
+        else:
+            ratio = np.sqrt(eigval[-1] / eigval[-2])
+
+        if lattice == "rect":
+            size1 = min(munits, round(np.sqrt(munits / ratio)))
+        else:
+            size1 = min(munits, round(np.sqrt(munits / ratio*np.sqrt(0.75))))
+
+        size2 = round(munits / size1)
+
+        return [int(size1), int(size2)]
 
 
 # Since joblib.delayed uses Pickle, this method needs to be a top level
