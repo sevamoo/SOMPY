@@ -48,7 +48,6 @@ Main Contributers:
 Vahid Moosavi @sevamoo
 Sebastian Packmann @sebastiandev
 Iván Vallés @ivallesp 
-[Notebook 1](http://bit.ly/1eZvaCM)
 ```
 
 
