@@ -79,10 +79,15 @@ class View2D(MapView):
             axis_num += 1
             ax = plt.subplot(no_row_in_plot, no_col_in_plot, axis_num)
             ind = int(indtoshow[axis_num-1])
-            norm = matplotlib.colors.Normalize(
-                vmin=np.mean(codebook[:, ind].flatten()) - 1 * np.std(codebook[:, ind].flatten()),
-                vmax=np.mean(codebook[:, ind].flatten()) + 1 * np.std(codebook[:, ind].flatten()),
-                clip=True)
+
+            min_color_scale = np.mean(codebook[:, ind].flatten()) - 1 * np.std(codebook[:, ind].flatten())
+            max_color_scale = np.mean(codebook[:, ind].flatten()) + 1 * np.std(codebook[:, ind].flatten())
+            min_color_scale = min_color_scale if min_color_scale >= min(codebook[:, ind].flatten()) else \
+                min(codebook[:, ind].flatten())
+            max_color_scale = max_color_scale if max_color_scale <= max(codebook[:, ind].flatten()) else \
+                max(codebook[:, ind].flatten())
+            norm = matplotlib.colors.Normalize(vmin=min_color_scale, vmax=max_color_scale, clip=True)
+
             mp = codebook[:, ind].reshape(som.codebook.mapsize[0],
                                           som.codebook.mapsize[1])
             pl = plt.pcolor(mp[::-1], norm=norm)
