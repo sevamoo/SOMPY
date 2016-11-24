@@ -2,7 +2,7 @@
 from logging.config import dictConfig
 import matplotlib
 
-matplotlib.use('Agg')  # Use whatever backend is available
+#matplotlib.use('Agg')  # Use whatever backend is available
 
 dictConfig({
     "version": 1,
