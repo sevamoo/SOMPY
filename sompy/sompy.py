@@ -606,11 +606,11 @@ class SOM(object):
 
     def calculate_map_size(self, lattice):
         """
-        :lattice: 'rect' or 'hex'
         Calculates the optimal map size given a dataset using eigenvalues and eigenvectors. Matlab ported
+        :lattice: 'rect' or 'hex'
         :return: map sizes
         """
-        D = self.data_raw
+        D = self.data_raw.copy()
         dlen = D.shape[0]
         dim = D.shape[1]
         munits = np.ceil(5 * (dlen ** 0.5))
