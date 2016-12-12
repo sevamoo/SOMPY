@@ -28,8 +28,10 @@ python setup.py install
 ```
 
 
-Many thanks to @sebastiandev, the library is now standardized in a pythonic tradition. Here ([notebook](https://gist.github.com/sevamoo/035c56e7428318dd3065013625f12a11)) you can see some basic examples, showing how to use the library.
+Many thanks to @sebastiandev, the library is now standardized in a pythonic tradition. Below you can see some basic examples, showing how to use the library.
 But I recommend you to go through the codes. There are several functionalities already implemented, but not documented. I would be very happy to add your new examples here. 
+
+[Basice Example](https://gist.github.com/sevamoo/035c56e7428318dd3065013625f12a11)
 
 ### Citation
 
