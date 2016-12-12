@@ -29,15 +29,7 @@ python setup.py install
 
 
 Many thanks to @sebastiandev, the library is now standardized in a pythonic tradition. Here ([notebook](https://gist.github.com/sevamoo/035c56e7428318dd3065013625f12a11)) you can see some basic examples, showing how to use the library.
-But I recommend you to go through the codes. There are several functionalities already implemented, but not documented.
-
-The following examples, need some modifications, since the library has been modified. However, it should be easy to figure out how to use them.
-
-- [Notebook 1](http://bit.ly/1eZvaCM)
-- [Notebook 2](http://bit.ly/1DHdLpn)
-- [Notebook 3](http://bit.ly/1zfn77s)
-- [Notebook 4]( http://vahidmoosavi.com/2014/02/18/a-self-organizing-map-som-package-in-python-sompy/)
-- [Notebook 5](http://bit.ly/1ujaD36)
+But I recommend you to go through the codes. There are several functionalities already implemented, but not documented. I would be very happy to add your new examples here. 
 
 ### Citation
 
