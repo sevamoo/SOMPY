@@ -1,5 +1,5 @@
 import numpy as np
-from sklearn.decomposition import PCA# RandomizedPCA (randomizedpca is deprecated)
+from sklearn.decomposition import RandomizedPCA
 from .decorators import timeit
 
 
@@ -96,9 +96,7 @@ class Codebook(object):
         tmp_matrix = np.tile(me, (self.nnodes, 1))
 
         # Randomized PCA is scalable
-        #pca = RandomizedPCA(n_components=pca_components)
-        pca = PCA(n_components=pca_components, svd_solver='randomized')
-
+        pca = RandomizedPCA(n_components=pca_components)
         pca.fit(data)
         eigvec = pca.components_
         eigval = pca.explained_variance_
