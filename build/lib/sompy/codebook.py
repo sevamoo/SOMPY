@@ -96,7 +96,7 @@ class Codebook(object):
         tmp_matrix = np.tile(me, (self.nnodes, 1))
 
         # Randomized PCA is scalable
-        #pca = RandomizedPCA(n_components=pca_components)
+        #pca = RandomizedPCA(n_components=pca_components) # RandomizedPCA is deprecated.
         pca = PCA(n_components=pca_components, svd_solver='randomized')
 
         pca.fit(data)
