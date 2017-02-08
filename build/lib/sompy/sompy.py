@@ -243,19 +243,10 @@ class SOM(object):
         elif self.initialization == 'pca':
             self.codebook.pca_linear_initialization(self._data)
 
-        #lbugnon
-        sompy.mapview.View2DPacked(50, 50, 'som',text_size=8).show(self)
-        #
         self.rough_train(njob=n_job, shared_memory=shared_memory, trainlen=train_rough_len,
                          radiusin=train_rough_radiusin, radiusfin=train_rough_radiusfin)
-        #lbugnon
-        sompy.mapview.View2DPacked(50, 50, 'som',text_size=8).show(self)
-        #
         self.finetune_train(njob=n_job, shared_memory=shared_memory, trainlen=train_finetune_len,
                             radiusin=train_finetune_radiusin, radiusfin=train_finetune_radiusfin)
-        #lbugnon
-        sompy.mapview.View2DPacked(50, 50, 'som',text_size=8).show(self)
-        #
         logging.debug(
             " --------------------------------------------------------------")
         logging.info(" Final quantization error: %f" % np.mean(self._bmu[1]))
@@ -335,9 +326,6 @@ class SOM(object):
             t1 = time()
             neighborhood = self.neighborhood.calculate(
                 self._distance_matrix, radius[i], self.codebook.nnodes)
-            #lbugnon
-            ipdb.set_trace()
-            #
             bmu = self.find_bmu(data, njb=njob)
             self.codebook.matrix = self.update_codebook_voronoi(data, bmu,
                                                                 neighborhood)
