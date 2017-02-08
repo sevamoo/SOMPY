@@ -7,8 +7,12 @@ import numpy as np
 class MapView(MatplotView):
 
     def _calculate_figure_params(self, som, which_dim, col_sz):
-        codebook = som._normalizer.denormalize_by(som.data_raw,
-                                                  som.codebook.matrix)
+
+        # add this to avoid error when normalization is not used
+        if som._normalizer:
+            codebook = som._normalizer.denormalize_by(som.data_raw, som.codebook.matrix)
+        else:
+            codebook = som.codebook.matrix
 
         indtoshow, sV, sH = None, None, None
 
@@ -139,7 +143,6 @@ class View2DPacked(MapView):
                     plt.title(compname[0][ind])
                     font = {'size': self.text_size}
                     plt.rc('font', **font)
-
         if what == 'cluster':
             try:
                 codebook = getattr(som, 'cluster_labels')
@@ -160,7 +163,9 @@ class View2DPacked(MapView):
 
         plt.subplots_adjust(hspace=h, wspace=w)
 
-
+        plt.show()
+        
+        
 class View1D(MapView):
 
     def show(self, som, what='codebook', which_dim='all', cmap=None,
@@ -178,4 +183,4 @@ class View1D(MapView):
             mp = codebook[:, ind]
             plt.plot(mp, '-k', linewidth=0.8)
 
-        plt.show()
+        #plt.show()

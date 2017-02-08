@@ -143,7 +143,6 @@ class View2DPacked(MapView):
                     plt.title(compname[0][ind])
                     font = {'size': self.text_size}
                     plt.rc('font', **font)
-            plt.show()
         if what == 'cluster':
             try:
                 codebook = getattr(som, 'cluster_labels')
@@ -163,6 +162,8 @@ class View2DPacked(MapView):
             self._set_axis(ax, msz0, msz1)
 
         plt.subplots_adjust(hspace=h, wspace=w)
+
+        plt.show()
         
         
 class View1D(MapView):
@@ -182,4 +183,4 @@ class View1D(MapView):
             mp = codebook[:, ind]
             plt.plot(mp, '-k', linewidth=0.8)
 
-        plt.show()
+        #plt.show()
