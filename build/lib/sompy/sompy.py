@@ -330,8 +330,12 @@ class SOM(object):
             self.codebook.matrix = self.update_codebook_voronoi(data, bmu,
                                                                 neighborhood)
 
+            #lbugnon: ojo! aca el bmy[1] a veces da negativo, y despues de eso se rompe...hay algo raro ahi
             qerror = (i + 1, round(time() - t1, 3),
-                      np.mean(np.sqrt(bmu[1] + fixed_euclidean_x2)))
+                      np.mean(np.sqrt(bmu[1] + fixed_euclidean_x2))) #lbugnon: ojo aca me tiró un warning, revisar (commit sinc: 965666d3d4d93bcf48e8cef6ea2c41a018c1cb83 )
+            #lbugnon
+            #ipdb.set_trace()
+            #
             logging.info(
                 " epoch: %d ---> elapsed time:  %f, quantization error: %f\n" %
                 qerror)
