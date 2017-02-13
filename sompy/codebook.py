@@ -1,7 +1,7 @@
 import numpy as np
 
-#from sklearn.decomposition import PCA
-from sklearn.decomposition import RandomizedPCA# (randomizedpca is deprecated)
+from sklearn.decomposition import PCA
+#from sklearn.decomposition import RandomizedPCA# (randomizedpca is deprecated)
 from .decorators import timeit
 
 
@@ -98,8 +98,8 @@ class Codebook(object):
         tmp_matrix = np.tile(me, (self.nnodes, 1))
 
         # Randomized PCA is scalable
-        pca = RandomizedPCA(n_components=pca_components) # RandomizedPCA is deprecated.
-        #pca = PCA(n_components=pca_components, svd_solver='randomized')
+        #pca = RandomizedPCA(n_components=pca_components) # RandomizedPCA is deprecated.
+        pca = PCA(n_components=pca_components, svd_solver='randomized')
 
         pca.fit(data)
         eigvec = pca.components_
