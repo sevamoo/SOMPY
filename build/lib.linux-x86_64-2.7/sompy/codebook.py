@@ -1,5 +1,7 @@
 import numpy as np
-from sklearn.decomposition import PCA# RandomizedPCA (randomizedpca is deprecated)
+
+from sklearn.decomposition import PCA
+#from sklearn.decomposition import RandomizedPCA# (randomizedpca is deprecated)
 from .decorators import timeit
 
 
