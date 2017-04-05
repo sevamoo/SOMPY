@@ -91,7 +91,6 @@ class SOMFactory(object):
         else:
             normalizer = None
         neighborhood_calculator = NeighborhoodFactory.build(neighborhood)
-        ipdb.set_trace()
         return SOM(data, neighborhood_calculator, normalizer, mapsize, mask,
                    mapshape, lattice, initialization, training, name, component_names)
 
@@ -196,7 +195,6 @@ class SOM(object):
         distance_matrix = np.zeros((nnodes, nnodes))
         for i in range(nnodes):
             distance_matrix[i] = self.codebook.grid_dist(i).reshape(1, nnodes)
-
         return distance_matrix
 
     @timeit()

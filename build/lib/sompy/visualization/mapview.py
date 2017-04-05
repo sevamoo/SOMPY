@@ -101,7 +101,7 @@ class View2D(MapView):
             ax.set_xticklabels([])
             plt.colorbar(pl)
 
-        plt.show()
+        #plt.show()
 
 
 class View2DPacked(MapView):
