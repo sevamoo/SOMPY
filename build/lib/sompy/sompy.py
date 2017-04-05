@@ -208,7 +208,8 @@ class SOM(object):
               train_finetune_len=None,
               train_finetune_radiusin=None,
               train_finetune_radiusfin=None,
-              train_len_factor=1):
+              train_len_factor=1,
+              maxtrainlen=np.Inf):
         """
         Trains the som
 
@@ -244,9 +245,9 @@ class SOM(object):
             self.codebook.pca_linear_initialization(self._data)
 
         self.rough_train(njob=n_job, shared_memory=shared_memory, trainlen=train_rough_len,
-                         radiusin=train_rough_radiusin, radiusfin=train_rough_radiusfin,trainlen_factor=train_len_factor)
+                         radiusin=train_rough_radiusin, radiusfin=train_rough_radiusfin,trainlen_factor=train_len_factor,maxtrainlen=maxtrainlen)
         self.finetune_train(njob=n_job, shared_memory=shared_memory, trainlen=train_finetune_len,
-                            radiusin=train_finetune_radiusin, radiusfin=train_finetune_radiusfin,trainlen_factor=train_len_factor)
+                            radiusin=train_finetune_radiusin, radiusfin=train_finetune_radiusfin,trainlen_factor=train_len_factor,maxtrainlen=maxtrainlen)
         logging.debug(
             " --------------------------------------------------------------")
         logging.info(" Final quantization error: %f" % np.mean(self._bmu[1]))
@@ -263,13 +264,14 @@ class SOM(object):
 
         return ms, mpd
 
-    def rough_train(self, njob=1, shared_memory=False, trainlen=None, radiusin=None, radiusfin=None,trainlen_factor=1):
+    def rough_train(self, njob=1, shared_memory=False, trainlen=None, radiusin=None, radiusfin=None,trainlen_factor=1,maxtrainlen=np.Inf):
         logging.info(" Rough training...")
 
         ms, mpd = self._calculate_ms_and_mpd()
-
-        trainlen = int(np.ceil(30*mpd)) if not trainlen else trainlen
-        #lbugnon
+        #lbugnon: add maxtrainlen
+        trainlen = min(int(np.ceil(30*mpd)),maxtrainlen) if not trainlen else trainlen
+        print("maxtrainlen %d",maxtrainlen)
+        #lbugnon: add trainlen_factor
         trainlen=int(trainlen*trainlen_factor)
         
         if self.initialization == 'random':
@@ -282,22 +284,25 @@ class SOM(object):
 
         self._batchtrain(trainlen, radiusin, radiusfin, njob, shared_memory)
 
-    def finetune_train(self, njob=1, shared_memory=False, trainlen=None, radiusin=None, radiusfin=None,trainlen_factor=1):
+    def finetune_train(self, njob=1, shared_memory=False, trainlen=None, radiusin=None, radiusfin=None,trainlen_factor=1,maxtrainlen=np.Inf):
         logging.info(" Finetune training...")
 
         ms, mpd = self._calculate_ms_and_mpd()
 
+        #lbugnon: add maxtrainlen
         if self.initialization == 'random':
-            trainlen = int(np.ceil(50*mpd)) if not trainlen else trainlen
+            trainlen = min(int(np.ceil(50*mpd)),maxtrainlen) if not trainlen else trainlen
             radiusin = max(1, ms/12.)  if not radiusin else radiusin # from radius fin in rough training
             radiusfin = max(1, radiusin/25.) if not radiusfin else radiusfin
 
         elif self.initialization == 'pca':
-            trainlen = int(np.ceil(40*mpd)) if not trainlen else trainlen
+            trainlen = min(int(np.ceil(40*mpd)),maxtrainlen) if not trainlen else trainlen
             radiusin = max(1, np.ceil(ms/8.)/4) if not radiusin else radiusin
             radiusfin = 1 if not radiusfin else radiusfin # max(1, ms/128)
 
-        #lbugnon
+        print("maxtrainlen %d",maxtrainlen)
+        
+        #lbugnon: add trainlen_factor
         trainlen=int(trainlen_factor*trainlen)
         
             
