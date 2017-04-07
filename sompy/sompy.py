@@ -348,7 +348,11 @@ class SOM(object):
             logging.info(
                 " epoch: %d ---> elapsed time:  %f, quantization error: %f\n" %
                 qerror)
-
+            if np.isnan(qerror):
+                logging.info("nan quantization error, exit train\n")
+                
+                return
+            
         bmu[1] = np.sqrt(bmu[1] + fixed_euclidean_x2)
         self._bmu = bmu
 
