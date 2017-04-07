@@ -270,10 +270,7 @@ class SOM(object):
         ms, mpd = self._calculate_ms_and_mpd()
         #lbugnon: add maxtrainlen
         trainlen = min(int(np.ceil(30*mpd)),maxtrainlen) if not trainlen else trainlen
-<<<<<<< HEAD
         print("maxtrainlen %d",maxtrainlen)
-=======
->>>>>>> 3dc10237324bf56869903f0f3ab8097950443944
         #lbugnon: add trainlen_factor
         trainlen=int(trainlen*trainlen_factor)
         
@@ -303,10 +300,7 @@ class SOM(object):
             radiusin = max(1, np.ceil(ms/8.)/4) if not radiusin else radiusin
             radiusfin = 1 if not radiusfin else radiusfin # max(1, ms/128)
 
-<<<<<<< HEAD
         print("maxtrainlen %d",maxtrainlen)
-=======
->>>>>>> 3dc10237324bf56869903f0f3ab8097950443944
         
         #lbugnon: add trainlen_factor
         trainlen=int(trainlen_factor*trainlen)
@@ -356,7 +350,11 @@ class SOM(object):
             logging.info(
                 " epoch: %d ---> elapsed time:  %f, quantization error: %f\n" %
                 qerror)
-
+            if np.any(np.isnan(qerror)):
+                logging.info("nan quantization error, exit train\n")
+                
+                return
+            
         bmu[1] = np.sqrt(bmu[1] + fixed_euclidean_x2)
         self._bmu = bmu
 

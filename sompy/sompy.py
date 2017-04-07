@@ -350,7 +350,7 @@ class SOM(object):
             logging.info(
                 " epoch: %d ---> elapsed time:  %f, quantization error: %f\n" %
                 qerror)
-            if np.isnan(qerror):
+            if np.any(np.isnan(qerror)):
                 logging.info("nan quantization error, exit train\n")
                 
                 return
