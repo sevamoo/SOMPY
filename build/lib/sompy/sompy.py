@@ -21,6 +21,7 @@ from multiprocessing import cpu_count
 from scipy.sparse import csr_matrix
 from sklearn import neighbors
 from sklearn.externals.joblib import Parallel, delayed, load, dump
+import sys
 
 from .decorators import timeit
 from .codebook import Codebook
@@ -353,7 +354,7 @@ class SOM(object):
             if np.any(np.isnan(qerror)):
                 logging.info("nan quantization error, exit train\n")
                 
-                return
+                #sys.exit("quantization error=nan, exit train")
             
         bmu[1] = np.sqrt(bmu[1] + fixed_euclidean_x2)
         self._bmu = bmu
