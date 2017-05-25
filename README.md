@@ -26,7 +26,7 @@ SOMPY has the following dependencies:
 ```Python
 python setup.py install
 ```
-
+### Tested with Python 2.7
 
 Many thanks to @sebastiandev, the library is now standardized in a pythonic tradition. Below you can see some basic examples, showing how to use the library.
 But I recommend you to go through the codes. There are several functionalities already implemented, but not documented. I would be very happy to add your new examples here. 
