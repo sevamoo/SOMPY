@@ -29,7 +29,8 @@ from .neighborhood import NeighborhoodFactory
 from .normalization import NormalizatorFactory
 
 #lbugnon
-import sompy,ipdb
+#import ipdb
+import sompy
 #
 
 class ComponentNamesError(Exception):
