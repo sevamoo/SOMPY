@@ -21,6 +21,7 @@ SOMPY has the following dependencies (tested only with Python 2.7x):
 - numexpr
 - matplotlib
 - pandas
+- ipdb
 
 ### Installation:
 ```Python
