@@ -441,9 +441,8 @@ class SOM(object):
         # The codebook values are all normalized
         # we can normalize the input data based on mean and std of
         # original data
-        if self._normalizer is not None:
-            data = self._normalizer.normalize_by(self.data_raw, data)
-        
+        data = self._normalizer.normalize_by(self.data_raw, data)
+
         return clf.predict(data)
 
     def predict_by(self, data, target, k=5, wt='distance'):
@@ -539,15 +538,9 @@ class SOM(object):
 
     def cluster(self, n_clusters=8):
         import sklearn.cluster as clust
-        
-        if self._normalizer is not None:
-            cl_labels = clust.KMeans(n_clusters=n_clusters).fit_predict(
-                self._normalizer.denormalize_by(self.data_raw,
-                                                self.codebook.matrix))
-        else:
-            cl_labels = clust.KMeans(n_clusters=n_clusters).fit_predict(
-                self.codebook.matrix)
-
+        cl_labels = clust.KMeans(n_clusters=n_clusters).fit_predict(
+            self._normalizer.denormalize_by(self.data_raw,
+                                            self.codebook.matrix))
         self.cluster_labels = cl_labels
         return cl_labels
 

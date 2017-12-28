@@ -1,6 +1,7 @@
 from .view import MatplotView
 from matplotlib import pyplot as plt
 import numpy as np
+import ipdb
 
 
 class HitMapView(MatplotView):
@@ -18,11 +19,10 @@ class HitMapView(MatplotView):
 
         # codebook = getattr(som, 'cluster_labels', som.cluster())
         msz = som.codebook.mapsize
-
         self.prepare()
         ax = self._fig.add_subplot(111)
 
-        if data:
+        if len(data)>1:
             proj = som.project_data(data)
             cents = som.bmu_ind_to_xy(proj)
             self._set_labels(cents, ax, codebook[proj])
@@ -30,8 +30,8 @@ class HitMapView(MatplotView):
         else:
             cents = som.bmu_ind_to_xy(np.arange(0, msz[0]*msz[1]))
             self._set_labels(cents, ax, codebook)
-
+            
         plt.imshow(codebook.reshape(msz[0], msz[1])[::], alpha=.5)
         plt.show()
-
+        
         return cents
