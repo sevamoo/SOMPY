@@ -271,7 +271,6 @@ class SOM(object):
         ms, mpd = self._calculate_ms_and_mpd()
         #lbugnon: add maxtrainlen
         trainlen = min(int(np.ceil(30*mpd)),maxtrainlen) if not trainlen else trainlen
-        #print("maxtrainlen %d",maxtrainlen)
         #lbugnon: add trainlen_factor
         trainlen=int(trainlen*trainlen_factor)
         
@@ -301,7 +300,7 @@ class SOM(object):
             radiusin = max(1, np.ceil(ms/8.)/4) if not radiusin else radiusin
             radiusfin = 1 if not radiusfin else radiusfin # max(1, ms/128)
 
-        #print("maxtrainlen %d",maxtrainlen)
+        
         
         #lbugnon: add trainlen_factor
         trainlen=int(trainlen_factor*trainlen)
@@ -442,8 +441,9 @@ class SOM(object):
         # The codebook values are all normalized
         # we can normalize the input data based on mean and std of
         # original data
-        data = self._normalizer.normalize_by(self.data_raw, data)
-
+        if self._normalizer is not None:
+            data = self._normalizer.normalize_by(self.data_raw, data)
+        
         return clf.predict(data)
 
     def predict_by(self, data, target, k=5, wt='distance'):
@@ -539,9 +539,15 @@ class SOM(object):
 
     def cluster(self, n_clusters=8):
         import sklearn.cluster as clust
-        cl_labels = clust.KMeans(n_clusters=n_clusters).fit_predict(
-            self._normalizer.denormalize_by(self.data_raw,
-                                            self.codebook.matrix))
+        
+        if self._normalizer is not None:
+            cl_labels = clust.KMeans(n_clusters=n_clusters).fit_predict(
+                self._normalizer.denormalize_by(self.data_raw,
+                                                self.codebook.matrix))
+        else:
+            cl_labels = clust.KMeans(n_clusters=n_clusters).fit_predict(
+                self.codebook.matrix)
+
         self.cluster_labels = cl_labels
         return cl_labels
 
