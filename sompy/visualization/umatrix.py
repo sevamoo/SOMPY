@@ -35,7 +35,7 @@ class UMatrixView(MatplotView):
         proj = som.project_data(som.data_raw)
         coord = som.bmu_ind_to_xy(proj)
 
-        fig, ax = plt.subplots(1, 1)
+        self._fig, ax = plt.subplots(1, 1)
         imshow(umat, cmap=plt.cm.get_cmap('RdYlBu_r'), alpha=1)
 
         if contooor:
@@ -61,7 +61,7 @@ class UMatrixView(MatplotView):
                              verticalalignment='center')
 
         ratio = float(msz[0])/(msz[0]+msz[1])
-        fig.set_size_inches((1-ratio)*15, ratio*15)
+        self._fig.set_size_inches((1-ratio)*15, ratio*15)
         plt.tight_layout()
         plt.subplots_adjust(hspace=.00, wspace=.000)
         sel_points = list()
