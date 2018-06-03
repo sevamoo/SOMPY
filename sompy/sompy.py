@@ -648,7 +648,6 @@ class SOM(object):
                 A[i, j] = sum(c) / len(c)
                 A[j, i] = A[i, j]
 
-        VS = np.linalg.eig(A)
         eigval = sorted(np.linalg.eig(A)[0])
         if eigval[-1] == 0 or eigval[-2] * munits < eigval[-1]:
             ratio = 1
