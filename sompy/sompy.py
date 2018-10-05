@@ -28,9 +28,7 @@ from .codebook import Codebook
 from .neighborhood import NeighborhoodFactory
 from .normalization import NormalizatorFactory
 
-#lbugnon
 import sompy,ipdb
-#
 
 class ComponentNamesError(Exception):
     pass
