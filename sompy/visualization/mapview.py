@@ -1,8 +1,10 @@
+from matplotlib import colors
 import matplotlib
+
+from sompy.visualization.plot_tools import plot_hex_map
 from .view import MatplotView
 from matplotlib import pyplot as plt
 import numpy as np
-#import ipdb
 
 
 class MapView(MatplotView):
@@ -62,12 +64,12 @@ class MapView(MatplotView):
 class View2D(MapView):
 
     def show(self, som, what='codebook', which_dim='all', cmap=None,
-             col_sz=None, desnormalize=False):
+             col_sz=None, denormalize=False):
         (self.width, self.height, indtoshow, no_row_in_plot, no_col_in_plot,
          axis_num) = self._calculate_figure_params(som, which_dim, col_sz)
         self.prepare()
 
-        if not desnormalize:
+        if not denormalize:
             codebook = som.codebook.matrix
         else:
             codebook = som._normalizer.denormalize_by(som.data_raw, som.codebook.matrix)
@@ -79,30 +81,32 @@ class View2D(MapView):
         elif type(which_dim) == list:
             names = som._component_names[0][which_dim]
 
+        if som.codebook.lattice=="rect":
+            while axis_num < len(indtoshow):
+                axis_num += 1
+                ax = plt.subplot(no_row_in_plot, no_col_in_plot, axis_num)
+                ind = int(indtoshow[axis_num-1])
 
-        while axis_num < len(indtoshow):
-            axis_num += 1
-            ax = plt.subplot(no_row_in_plot, no_col_in_plot, axis_num)
-            ind = int(indtoshow[axis_num-1])
+                min_color_scale = np.mean(codebook[:, ind].flatten()) - 1 * np.std(codebook[:, ind].flatten())
+                max_color_scale = np.mean(codebook[:, ind].flatten()) + 1 * np.std(codebook[:, ind].flatten())
+                min_color_scale = min_color_scale if min_color_scale >= min(codebook[:, ind].flatten()) else \
+                    min(codebook[:, ind].flatten())
+                max_color_scale = max_color_scale if max_color_scale <= max(codebook[:, ind].flatten()) else \
+                    max(codebook[:, ind].flatten())
+                norm = matplotlib.colors.Normalize(vmin=min_color_scale, vmax=max_color_scale, clip=True)
 
-            min_color_scale = np.mean(codebook[:, ind].flatten()) - 1 * np.std(codebook[:, ind].flatten())
-            max_color_scale = np.mean(codebook[:, ind].flatten()) + 1 * np.std(codebook[:, ind].flatten())
-            min_color_scale = min_color_scale if min_color_scale >= min(codebook[:, ind].flatten()) else \
-                min(codebook[:, ind].flatten())
-            max_color_scale = max_color_scale if max_color_scale <= max(codebook[:, ind].flatten()) else \
-                max(codebook[:, ind].flatten())
-            norm = matplotlib.colors.Normalize(vmin=min_color_scale, vmax=max_color_scale, clip=True)
+                mp = codebook[:, ind].reshape(som.codebook.mapsize[0],
+                                              som.codebook.mapsize[1])
+                pl = plt.pcolor(mp[::-1], norm=norm)
+                plt.axis([0, som.codebook.mapsize[1], 0, som.codebook.mapsize[0]])
+                plt.title(names[axis_num - 1])
+                ax.set_yticklabels([])
+                ax.set_xticklabels([])
+                plt.colorbar(pl)
+        elif som.codebook.lattice=="hexa":
+            plot_hex_map(codebook.reshape(som.codebook.mapsize + [som.codebook.matrix.shape[-1]]), titles=names,
+                         shape=[no_row_in_plot, no_col_in_plot], colormap=cmap, fig=self._fig)
 
-            mp = codebook[:, ind].reshape(som.codebook.mapsize[0],
-                                          som.codebook.mapsize[1])
-            pl = plt.pcolor(mp[::-1], norm=norm)
-            plt.axis([0, som.codebook.mapsize[1], 0, som.codebook.mapsize[0]])
-            plt.title(names[axis_num - 1])
-            ax.set_yticklabels([])
-            ax.set_xticklabels([])
-            plt.colorbar(pl)
-
-        #plt.show()
 
 
 class View2DPacked(MapView):
@@ -185,3 +189,5 @@ class View1D(MapView):
             plt.plot(mp, '-k', linewidth=0.8)
 
         #plt.show()
+
+

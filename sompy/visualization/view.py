@@ -42,6 +42,7 @@ class MatplotView(View):
     def prepare(self, *args, **kwargs):
         self._close_fig()
         self._fig = plt.figure(figsize=(self.width, self.height))
+        self._fig.patch.set_facecolor('white')
         plt.title(self.title)
         plt.axis('off')
         plt.rc('font', **{'size': self.text_size})
