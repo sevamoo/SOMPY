@@ -41,7 +41,7 @@ class Codebook(object):
                 "Mapsize is expected to be a 2 element list or a single int")
 
         self.mapsize = _size
-        self.nnodes = mapsize[0]*mapsize[1]
+        self.nnodes = self.mapsize[0]*self.mapsize[1]
         self.matrix = np.asarray(self.mapsize)
         self.initialized = False
 
