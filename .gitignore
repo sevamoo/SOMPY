@@ -104,6 +104,9 @@ venv.bak/
 # Rope project settings
 .ropeproject
 
+# VS Code project settings
+.vscode/
+
 # mkdocs documentation
 /site
 
@@ -114,3 +117,8 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+# macOS
+.DS_Store
+
+.directory
