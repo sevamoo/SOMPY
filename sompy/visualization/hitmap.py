@@ -1,10 +1,8 @@
-from .view import MatplotView
-from sompy.visualization.plot_tools import plot_hex_map
-from matplotlib import pyplot as plt
 import numpy as np
+from matplotlib import pyplot as plt
 
 from .mapview import MapView
-
+from .plot_tools import plot_hex_map
 
 
 class HitMapView(MapView):

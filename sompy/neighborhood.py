@@ -1,6 +1,7 @@
-import numpy as np
 import inspect
 import sys
+
+import numpy as np
 
 small = .000000000001
 

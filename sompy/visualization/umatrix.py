@@ -1,9 +1,11 @@
-from .view import MatplotView
-from matplotlib import pyplot as plt
-from pylab import imshow, contour
 from math import sqrt
+
 import numpy as np
+import pylab
 import scipy
+from matplotlib import pyplot as plt
+
+from .view import MatplotView
 
 
 class UMatrixView(MatplotView):
@@ -36,7 +38,7 @@ class UMatrixView(MatplotView):
         coord = som.bmu_ind_to_xy(proj)
 
         self._fig, ax = plt.subplots(1, 1)
-        imshow(umat, cmap=plt.cm.get_cmap('RdYlBu_r'), alpha=1)
+        pylab.imshow(umat, cmap=plt.cm.get_cmap('RdYlBu_r'), alpha=1)
 
         if contooor:
             mn = np.min(umat.flatten())
@@ -44,8 +46,8 @@ class UMatrixView(MatplotView):
             std = np.std(umat.flatten())
             md = np.median(umat.flatten())
             mx = md + 0 * std
-            contour(umat, np.linspace(mn, mx, 15), linewidths=0.7,
-                    cmap=plt.cm.get_cmap('Blues'))
+            pylab.contour(umat, np.linspace(mn, mx, 15), linewidths=0.7,
+                          cmap=plt.cm.get_cmap('Blues'))
 
         if show_data:
             plt.scatter(coord[:, 1], coord[:, 0], s=2, alpha=1., c='Gray',
@@ -76,7 +78,7 @@ class UMatrixView(MatplotView):
             # 'Laplacian of Gaussian'
             blobs = blob_log(image, max_sigma=5, num_sigma=4, threshold=.152)
             blobs[:, 2] = blobs[:, 2] * sqrt(2)
-            imshow(umat, cmap=plt.cm.get_cmap('RdYlBu_r'), alpha=1)
+            pylab.imshow(umat, cmap=plt.cm.get_cmap('RdYlBu_r'), alpha=1)
             sel_points = list()
 
             for blob in blobs:

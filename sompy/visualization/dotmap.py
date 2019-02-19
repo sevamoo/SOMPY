@@ -1,6 +1,7 @@
-from .view import MatplotView
-from matplotlib import pyplot as plt
 import numpy as np
+from matplotlib import pyplot as plt
+
+from .view import MatplotView
 
 
 class DotMapView(MatplotView):

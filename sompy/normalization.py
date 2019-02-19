@@ -1,6 +1,7 @@
-import numpy as np
-import sys
 import inspect
+import sys
+
+import numpy as np
 
 
 class NormalizerFactory(object):

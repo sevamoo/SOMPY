@@ -8,23 +8,21 @@
 # Contributor: Sebastian Packmann (sebastian.packmann@gmail.com)
 
 
-import tempfile
-import os
 import itertools
 import logging
+import os
+import tempfile
+from multiprocessing import cpu_count
+from multiprocessing.dummy import Pool
+from time import time
 
 import numpy as np
-
-from time import time
-from multiprocessing.dummy import Pool
-from multiprocessing import cpu_count
 from scipy.sparse import csr_matrix
 from sklearn import neighbors
-from sklearn.externals.joblib import Parallel, delayed, load, dump
-import sys
+from sklearn.externals.joblib import dump, load
 
-from .decorators import timeit
 from .codebook import Codebook
+from .decorators import timeit
 from .neighborhood import NeighborhoodFactory
 from .normalization import NormalizerFactory
 

@@ -1,8 +1,8 @@
-from .view import MatplotView
-from matplotlib import pyplot as plt
-from matplotlib import cm
-from matplotlib.colors import LogNorm
 import numpy as np
+from matplotlib import cm, pyplot as plt
+from matplotlib.colors import LogNorm
+
+from .view import MatplotView
 
 
 class Hist2d(MatplotView):
