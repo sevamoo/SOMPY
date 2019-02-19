@@ -137,7 +137,8 @@ class SOM(object):
         mapsize = self.calculate_map_size(lattice) if not mapsize else mapsize
         self.codebook = Codebook(mapsize, lattice)
         self.training = training
-        self._component_names = self.build_component_names() if component_names is None else [component_names]
+        self._component_names = (self.build_component_names()
+                                 if component_names is None else [component_names])
         self._distance_matrix = self.calculate_map_dist()
 
     @property
@@ -212,7 +213,8 @@ class SOM(object):
         :param n_job: number of jobs to use to parallelize the traning
         :param shared_memory: flag to active shared memory
         :param verbose: verbosity, could be 'debug', 'info' or None
-        :param train_len_factor: Factor that multiply default training lenghts (similar to "training" parameter in the matlab version). (lbugnon)
+        :param train_len_factor: Factor that multiply default training lenghts
+            (similar to "training" parameter in the matlab version). (lbugnon)
         """
         logging.root.setLevel(
             getattr(logging, verbose.upper()) if verbose else logging.ERROR)
@@ -241,9 +243,11 @@ class SOM(object):
             self.codebook.pca_linear_initialization(self._data)
 
         self.rough_train(njob=n_job, shared_memory=shared_memory, trainlen=train_rough_len,
-                         radiusin=train_rough_radiusin, radiusfin=train_rough_radiusfin, trainlen_factor=train_len_factor, maxtrainlen=maxtrainlen)
+                         radiusin=train_rough_radiusin, radiusfin=train_rough_radiusfin,
+                         trainlen_factor=train_len_factor, maxtrainlen=maxtrainlen)
         self.finetune_train(njob=n_job, shared_memory=shared_memory, trainlen=train_finetune_len,
-                            radiusin=train_finetune_radiusin, radiusfin=train_finetune_radiusfin, trainlen_factor=train_len_factor, maxtrainlen=maxtrainlen)
+                            radiusin=train_finetune_radiusin, radiusfin=train_finetune_radiusfin,
+                            trainlen_factor=train_len_factor, maxtrainlen=maxtrainlen)
         logging.debug(
             " --------------------------------------------------------------")
         logging.info(" Final quantization error: %f" % np.mean(self._bmu[1]))
@@ -260,7 +264,8 @@ class SOM(object):
 
         return ms, mpd
 
-    def rough_train(self, njob=1, shared_memory=False, trainlen=None, radiusin=None, radiusfin=None, trainlen_factor=1, maxtrainlen=np.Inf):
+    def rough_train(self, njob=1, shared_memory=False, trainlen=None, radiusin=None,
+                    radiusfin=None, trainlen_factor=1, maxtrainlen=np.Inf):
         logging.info(" Rough training...")
 
         ms, mpd = self._calculate_ms_and_mpd()
@@ -280,7 +285,8 @@ class SOM(object):
 
         self._batchtrain(trainlen, radiusin, radiusfin, njob, shared_memory)
 
-    def finetune_train(self, njob=1, shared_memory=False, trainlen=None, radiusin=None, radiusfin=None, trainlen_factor=1, maxtrainlen=np.Inf):
+    def finetune_train(self, njob=1, shared_memory=False, trainlen=None, radiusin=None,
+                       radiusfin=None, trainlen_factor=1, maxtrainlen=np.Inf):
         logging.info(" Finetune training...")
 
         ms, mpd = self._calculate_ms_and_mpd()
@@ -288,7 +294,7 @@ class SOM(object):
         #lbugnon: add maxtrainlen
         if self.initialization == 'random':
             trainlen = min(int(np.ceil(50 * mpd)), maxtrainlen) if not trainlen else trainlen
-            radiusin = max(1, ms / 12.) if not radiusin else radiusin # from radius fin in rough training
+            radiusin = max(1, ms / 12.) if not radiusin else radiusin
             radiusfin = max(1, radiusin / 25.) if not radiusfin else radiusfin
 
         elif self.initialization == 'pca':
@@ -336,12 +342,11 @@ class SOM(object):
             self.codebook.matrix = self.update_codebook_voronoi(data, bmu,
                                                                 neighborhood)
 
-            #lbugnon: ojo! aca el bmy[1] a veces da negativo, y despues de eso se rompe...hay algo raro ahi
+            #lbugnon: ojo! aca el bmy[1] a veces da negativo, y despues de eso se rompe...
+            # hay algo raro ahi
             qerror = (i + 1, round(time() - t1, 3),
-                      np.mean(np.sqrt(bmu[1] + fixed_euclidean_x2))) #lbugnon: ojo aca me tiró un warning, revisar (commit sinc: 965666d3d4d93bcf48e8cef6ea2c41a018c1cb83 )
-            #lbugnon
-            #ipdb.set_trace()
-            #
+                      np.mean(np.sqrt(bmu[1] + fixed_euclidean_x2)))
+
             logging.info(
                 " epoch: %d ---> elapsed time:  %f, quantization error: %f\n" %
                 qerror)
@@ -618,12 +623,15 @@ class SOM(object):
         bmus2 = self.find_bmu(self.data_raw, njb=1, nth=2)
         topographic_error = None
         if self.codebook.lattice == "rect":
-            bmus_gap = np.abs((self.bmu_ind_to_xy(np.array(bmus1[0]))[:, 0:2] - self.bmu_ind_to_xy(np.array(bmus2[0]))[:, 0:2]).sum(axis=1))
+            bmus_gap = np.abs((self.bmu_ind_to_xy(np.array(bmus1[0]))[:, 0:2]
+                               - self.bmu_ind_to_xy(np.array(bmus2[0]))[:, 0:2]).sum(axis=1))
             topographic_error = np.mean(bmus_gap != 1)
         elif self.codebook.lattice == "hexa":
-            dist_matrix_1 = self.codebook.lattice_distances[bmus1[0].astype(int)].reshape(len(bmus1[0]), -1)
-            topographic_error = (np.array(
-                [distances[bmu2] for bmu2, distances in zip(bmus2[0].astype(int), dist_matrix_1)]) > 2).mean()
+            dist_matrix_1 = (self.codebook.lattice_distances[bmus1[0].astype(int)]
+                             .reshape(len(bmus1[0]), -1))
+            topographic_error = (np.array([distances[bmu2]
+                                           for bmu2, distances
+                                           in zip(bmus2[0].astype(int), dist_matrix_1)]) > 2).mean()
         return(topographic_error)
 
     def calculate_quantization_error(self):
@@ -632,8 +640,9 @@ class SOM(object):
         return quantization_error
 
     def calculate_map_size(self, lattice):
-        """
-        Calculates the optimal map size given a dataset using eigenvalues and eigenvectors. Matlab ported
+        """Calculates the optimal map size given a dataset using eigenvalues and eigenvectors.
+        Matlab ported.
+
         :lattice: 'rect' or 'hex'
         :return: map sizes
         """

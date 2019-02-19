@@ -26,9 +26,9 @@ class BmuHitsView(MapView):
         self.height /= (self.width / org_w) if self.width > self.height else (self.height / org_h)
 
         counts = Counter(som._bmu[0])
-        counts = [counts.get(x, 0) for x in range(som.codebook.mapsize[0] * som.codebook.mapsize[1])]
-        mp = np.array(counts).reshape(som.codebook.mapsize[0],
-                                      som.codebook.mapsize[1])
+        counts = [counts.get(x, 0)
+                  for x in range(som.codebook.mapsize[0] * som.codebook.mapsize[1])]
+        mp = np.array(counts).reshape(som.codebook.mapsize[0], som.codebook.mapsize[1])
 
         if not logaritmic:
             norm = matplotlib.colors.Normalize(

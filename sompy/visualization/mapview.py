@@ -86,16 +86,20 @@ class View2D(MapView):
                 ax = plt.subplot(no_row_in_plot, no_col_in_plot, axis_num)
                 ind = int(indtoshow[axis_num - 1])
 
-                min_color_scale = np.mean(codebook[:, ind].flatten()) - 1 * np.std(codebook[:, ind].flatten())
-                max_color_scale = np.mean(codebook[:, ind].flatten()) + 1 * np.std(codebook[:, ind].flatten())
-                min_color_scale = min_color_scale if min_color_scale >= min(codebook[:, ind].flatten()) else \
-                    min(codebook[:, ind].flatten())
-                max_color_scale = max_color_scale if max_color_scale <= max(codebook[:, ind].flatten()) else \
-                    max(codebook[:, ind].flatten())
-                norm = matplotlib.colors.Normalize(vmin=min_color_scale, vmax=max_color_scale, clip=True)
+                min_color_scale = (np.mean(codebook[:, ind].flatten())
+                                   - 1 * np.std(codebook[:, ind].flatten()))
+                max_color_scale = (np.mean(codebook[:, ind].flatten())
+                                   + 1 * np.std(codebook[:, ind].flatten()))
+                min_color_scale = (min_color_scale
+                                   if min_color_scale >= min(codebook[:, ind].flatten())
+                                   else min(codebook[:, ind].flatten()))
+                max_color_scale = (max_color_scale
+                                   if max_color_scale <= max(codebook[:, ind].flatten())
+                                   else max(codebook[:, ind].flatten()))
+                norm = matplotlib.colors.Normalize(vmin=min_color_scale, vmax=max_color_scale,
+                                                   clip=True)
 
-                mp = codebook[:, ind].reshape(som.codebook.mapsize[0],
-                                              som.codebook.mapsize[1])
+                mp = codebook[:, ind].reshape(som.codebook.mapsize[0], som.codebook.mapsize[1])
                 pl = plt.pcolor(mp[::-1], norm=norm)
                 plt.axis([0, som.codebook.mapsize[1], 0, som.codebook.mapsize[0]])
                 plt.title(names[axis_num - 1])
@@ -103,8 +107,9 @@ class View2D(MapView):
                 ax.set_xticklabels([])
                 plt.colorbar(pl)
         elif som.codebook.lattice == "hexa":
-            plot_hex_map(codebook.reshape(som.codebook.mapsize + [som.codebook.matrix.shape[-1]]), titles=names,
-                         shape=[no_row_in_plot, no_col_in_plot], colormap=cmap, fig=self._fig)
+            plot_hex_map(codebook.reshape(som.codebook.mapsize + [som.codebook.matrix.shape[-1]]),
+                         titles=names, shape=[no_row_in_plot, no_col_in_plot], colormap=cmap,
+                         fig=self._fig)
 
 
 class View2DPacked(MapView):

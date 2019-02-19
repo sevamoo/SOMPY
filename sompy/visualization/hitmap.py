@@ -50,6 +50,7 @@ class HitMapView(MapView):
             plt.imshow(clusters.reshape(msz[0], msz[1])[::], alpha=.5)
 
         elif som.codebook.lattice == "hexa":
-            ax, cents = plot_hex_map(np.flip(clusters.reshape(msz[0], msz[1])[::], axis=1), fig=self._fig, colormap=cmap, colorbar=False)
+            ax, cents = plot_hex_map(np.flip(clusters.reshape(msz[0], msz[1])[::], axis=1),
+                                     fig=self._fig, colormap=cmap, colorbar=False)
             if anotate:
                 self._set_labels(cents, ax, clusters, onlyzeros, labelsize, hex=True)

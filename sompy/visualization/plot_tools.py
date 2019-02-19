@@ -6,8 +6,8 @@ from matplotlib.collections import RegularPolyCollection
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 
 
-def plot_hex_map(d_matrix, titles=[], colormap=cm.gray, shape=[1, 1], comp_width=5, hex_shrink=1.0, fig=None,
-                 colorbar=True):
+def plot_hex_map(d_matrix, titles=[], colormap=cm.gray, shape=[1, 1], comp_width=5,
+                 hex_shrink=1.0, fig=None, colorbar=True):
     """
     Plot hexagon map where each neuron is represented by a hexagon. The hexagon
     color is given by the distance between the neurons (D-Matrix)
@@ -25,7 +25,8 @@ def plot_hex_map(d_matrix, titles=[], colormap=cm.gray, shape=[1, 1], comp_width
 
     def create_grid_coordinates(x, y):
         coordinates = [x for row in -1 * np.array(list(range(x))) for x in
-                       list(zip(np.arange(((row) % 2) * 0.5, y + ((row) % 2) * 0.5), [0.8660254 * (row)] * y))]
+                       list(zip(np.arange(((row) % 2) * 0.5, y + ((row) % 2) * 0.5),
+                                [0.8660254 * (row)] * y))]
         return (np.array(list(reversed(coordinates))), x, y)
 
     if d_matrix.ndim < 3:
