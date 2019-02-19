@@ -43,7 +43,7 @@ class UMatrixView(MatplotView):
             mx = np.max(umat.flatten())
             std = np.std(umat.flatten())
             md = np.median(umat.flatten())
-            mx = md + 0*std
+            mx = md + 0 * std
             contour(umat, np.linspace(mn, mx, 15), linewidths=0.7,
                     cmap=plt.cm.get_cmap('Blues'))
 
@@ -60,8 +60,8 @@ class UMatrixView(MatplotView):
                              horizontalalignment='center',
                              verticalalignment='center')
 
-        ratio = float(msz[0])/(msz[0]+msz[1])
-        self._fig.set_size_inches((1-ratio)*15, ratio*15)
+        ratio = float(msz[0]) / (msz[0] + msz[1])
+        self._fig.set_size_inches((1 - ratio) * 15, ratio * 15)
         plt.tight_layout()
         plt.subplots_adjust(hspace=.00, wspace=.000)
         sel_points = list()

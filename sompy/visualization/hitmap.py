@@ -44,7 +44,7 @@ class HitMapView(MapView):
                     self._set_labels(cents, ax, clusters[proj], onlyzeros, labelsize, hex=False)
 
             else:
-                cents = som.bmu_ind_to_xy(np.arange(0, msz[0]*msz[1]))
+                cents = som.bmu_ind_to_xy(np.arange(0, msz[0] * msz[1]))
                 if anotate:
                     # TODO: Fix position of the labels
                     self._set_labels(cents, ax, clusters, onlyzeros, labelsize, hex=False)
@@ -52,6 +52,6 @@ class HitMapView(MapView):
             plt.imshow(clusters.reshape(msz[0], msz[1])[::], alpha=.5)
 
         elif som.codebook.lattice == "hexa":
-            ax, cents = plot_hex_map(np.flip(clusters.reshape(msz[0], msz[1])[::], axis=1),  fig=self._fig, colormap=cmap, colorbar=False)
+            ax, cents = plot_hex_map(np.flip(clusters.reshape(msz[0], msz[1])[::], axis=1), fig=self._fig, colormap=cmap, colorbar=False)
             if anotate:
                 self._set_labels(cents, ax, clusters, onlyzeros, labelsize, hex=True)

@@ -155,7 +155,7 @@ class SOM(object):
                                       'size as the data dimension/features')
 
     def build_component_names(self):
-        cc = ['Variable-' + str(i+1) for i in range(0, self._dim)]
+        cc = ['Variable-' + str(i + 1) for i in range(0, self._dim)]
         return np.asarray(cc)[np.newaxis, :]
 
     @property
@@ -243,9 +243,9 @@ class SOM(object):
             self.codebook.pca_linear_initialization(self._data)
 
         self.rough_train(njob=n_job, shared_memory=shared_memory, trainlen=train_rough_len,
-                         radiusin=train_rough_radiusin, radiusfin=train_rough_radiusfin,trainlen_factor=train_len_factor,maxtrainlen=maxtrainlen)
+                         radiusin=train_rough_radiusin, radiusfin=train_rough_radiusfin, trainlen_factor=train_len_factor, maxtrainlen=maxtrainlen)
         self.finetune_train(njob=n_job, shared_memory=shared_memory, trainlen=train_finetune_len,
-                            radiusin=train_finetune_radiusin, radiusfin=train_finetune_radiusfin,trainlen_factor=train_len_factor,maxtrainlen=maxtrainlen)
+                            radiusin=train_finetune_radiusin, radiusfin=train_finetune_radiusfin, trainlen_factor=train_len_factor, maxtrainlen=maxtrainlen)
         logging.debug(
             " --------------------------------------------------------------")
         logging.info(" Final quantization error: %f" % np.mean(self._bmu[1]))
@@ -255,55 +255,54 @@ class SOM(object):
         max_s = max(self.codebook.mapsize[0], self.codebook.mapsize[1])
 
         if mn == 1:
-            mpd = float(self.codebook.nnodes*10)/float(self._dlen)
+            mpd = float(self.codebook.nnodes * 10) / float(self._dlen)
         else:
-            mpd = float(self.codebook.nnodes)/float(self._dlen)
-        ms = max_s/2.0 if mn == 1 else max_s
+            mpd = float(self.codebook.nnodes) / float(self._dlen)
+        ms = max_s / 2.0 if mn == 1 else max_s
 
         return ms, mpd
 
-    def rough_train(self, njob=1, shared_memory=False, trainlen=None, radiusin=None, radiusfin=None,trainlen_factor=1,maxtrainlen=np.Inf):
+    def rough_train(self, njob=1, shared_memory=False, trainlen=None, radiusin=None, radiusfin=None, trainlen_factor=1, maxtrainlen=np.Inf):
         logging.info(" Rough training...")
 
         ms, mpd = self._calculate_ms_and_mpd()
         #lbugnon: add maxtrainlen
-        trainlen = min(int(np.ceil(30*mpd)),maxtrainlen) if not trainlen else trainlen
+        trainlen = min(int(np.ceil(30 * mpd)), maxtrainlen) if not trainlen else trainlen
         #print("maxtrainlen %d",maxtrainlen)
         #lbugnon: add trainlen_factor
-        trainlen=int(trainlen*trainlen_factor)
-        
+        trainlen = int(trainlen * trainlen_factor)
+
         if self.initialization == 'random':
-            radiusin = max(1, np.ceil(ms/3.)) if not radiusin else radiusin
-            radiusfin = max(1, radiusin/6.) if not radiusfin else radiusfin
+            radiusin = max(1, np.ceil(ms / 3.)) if not radiusin else radiusin
+            radiusfin = max(1, radiusin / 6.) if not radiusfin else radiusfin
 
         elif self.initialization == 'pca':
-            radiusin = max(1, np.ceil(ms/8.)) if not radiusin else radiusin
-            radiusfin = max(1, radiusin/4.) if not radiusfin else radiusfin
+            radiusin = max(1, np.ceil(ms / 8.)) if not radiusin else radiusin
+            radiusfin = max(1, radiusin / 4.) if not radiusfin else radiusfin
 
         self._batchtrain(trainlen, radiusin, radiusfin, njob, shared_memory)
 
-    def finetune_train(self, njob=1, shared_memory=False, trainlen=None, radiusin=None, radiusfin=None,trainlen_factor=1,maxtrainlen=np.Inf):
+    def finetune_train(self, njob=1, shared_memory=False, trainlen=None, radiusin=None, radiusfin=None, trainlen_factor=1, maxtrainlen=np.Inf):
         logging.info(" Finetune training...")
 
         ms, mpd = self._calculate_ms_and_mpd()
 
         #lbugnon: add maxtrainlen
         if self.initialization == 'random':
-            trainlen = min(int(np.ceil(50*mpd)),maxtrainlen) if not trainlen else trainlen
-            radiusin = max(1, ms/12.)  if not radiusin else radiusin # from radius fin in rough training
-            radiusfin = max(1, radiusin/25.) if not radiusfin else radiusfin
+            trainlen = min(int(np.ceil(50 * mpd)), maxtrainlen) if not trainlen else trainlen
+            radiusin = max(1, ms / 12.) if not radiusin else radiusin # from radius fin in rough training
+            radiusfin = max(1, radiusin / 25.) if not radiusfin else radiusfin
 
         elif self.initialization == 'pca':
-            trainlen = min(int(np.ceil(40*mpd)),maxtrainlen) if not trainlen else trainlen
-            radiusin = max(1, np.ceil(ms/8.)/4) if not radiusin else radiusin
+            trainlen = min(int(np.ceil(40 * mpd)), maxtrainlen) if not trainlen else trainlen
+            radiusin = max(1, np.ceil(ms / 8.) / 4) if not radiusin else radiusin
             radiusfin = 1 if not radiusfin else radiusfin # max(1, ms/128)
 
         #print("maxtrainlen %d",maxtrainlen)
-        
+
         #lbugnon: add trainlen_factor
-        trainlen=int(trainlen_factor*trainlen)
-        
-            
+        trainlen = int(trainlen_factor * trainlen)
+
         self._batchtrain(trainlen, radiusin, radiusfin, njob, shared_memory)
 
     def _batchtrain(self, trainlen, radiusin, radiusfin, njob=1,
@@ -350,9 +349,9 @@ class SOM(object):
                 qerror)
             if np.any(np.isnan(qerror)):
                 logging.info("nan quantization error, exit train\n")
-                
+
                 #sys.exit("quantization error=nan, exit train")
-            
+
         bmu[1] = np.sqrt(bmu[1] + fixed_euclidean_x2)
         self._bmu = bmu
 
@@ -380,7 +379,7 @@ class SOM(object):
             return part * dlen // njb
 
         def col_chunk(part):
-            return min((part+1)*dlen // njb, dlen)
+            return min((part + 1) * dlen // njb, dlen)
 
         chunks = [input_matrix[row_chunk(i):col_chunk(i)] for i in range(njb)]
         b = pool.map(lambda chk: chunk_bmu_finder(chk, self.codebook.matrix, y2, nth=nth), chunks)
@@ -465,7 +464,7 @@ class SOM(object):
             data = self._normalizer.normalize_by(self.data_raw, data)
             data = data[:, indX]
 
-        elif dimdata == dim-1:
+        elif dimdata == dim - 1:
             data = self._normalizer.normalize_by(self.data_raw[:, indX], data)
 
         predicted_values = clf.predict(data)
@@ -485,7 +484,7 @@ class SOM(object):
             (more detail in KNeighborsRegressor docs)
         :returns: predicted values for the input data
         """
-        target = self.data_raw.shape[1]-1
+        target = self.data_raw.shape[1] - 1
         x_train = self.codebook.matrix[:, :target]
         y_train = self.codebook.matrix[:, target]
         clf = neighbors.KNeighborsRegressor(k, weights=wt)
@@ -528,7 +527,7 @@ class SOM(object):
         # bmu should be an integer between 0 to no_nodes
         out = np.zeros((bmu_ind.shape[0], 3))
         out[:, 2] = bmu_ind
-        out[:, 0] = rows-1-bmu_ind / cols
+        out[:, 0] = rows - 1 - bmu_ind / cols
         out[:, 0] = bmu_ind / cols
         out[:, 1] = bmu_ind % cols
 
@@ -571,14 +570,14 @@ class SOM(object):
             data = self._normalizer.normalize_by(self.data_raw, data)
             data = data[:, indx]
 
-        elif dimdata == dim-1:
+        elif dimdata == dim - 1:
             data = self._normalizer.normalize_by(self.data_raw[:, indx], data)
 
         weights, ind = clf.kneighbors(data, n_neighbors=k,
                                       return_distance=True)
-        weights = 1./weights
+        weights = 1. / weights
         sum_ = np.sum(weights, axis=1)
-        weights = weights/sum_[:, np.newaxis]
+        weights = weights / sum_[:, np.newaxis]
         labels = np.sign(self.codebook.matrix[ind, target])
         labels[labels >= 0] = 1
 
@@ -612,7 +611,7 @@ class SOM(object):
             weights, ind = clf.kneighbors(data)
 
             # Softmax function
-            weights = 1./weights
+            weights = 1. / weights
 
         return weights, ind
 
@@ -620,10 +619,10 @@ class SOM(object):
         bmus1 = self.find_bmu(self.data_raw, njb=1, nth=1)
         bmus2 = self.find_bmu(self.data_raw, njb=1, nth=2)
         topographic_error = None
-        if self.codebook.lattice=="rect":
+        if self.codebook.lattice == "rect":
             bmus_gap = np.abs((self.bmu_ind_to_xy(np.array(bmus1[0]))[:, 0:2] - self.bmu_ind_to_xy(np.array(bmus2[0]))[:, 0:2]).sum(axis=1))
             topographic_error = np.mean(bmus_gap != 1)
-        elif self.codebook.lattice=="hexa":
+        elif self.codebook.lattice == "hexa":
             dist_matrix_1 = self.codebook.lattice_distances[bmus1[0].astype(int)].reshape(len(bmus1[0]), -1)
             topographic_error = (np.array(
                 [distances[bmu2] for bmu2, distances in zip(bmus2[0].astype(int), dist_matrix_1)]) > 2).mean()
@@ -666,7 +665,7 @@ class SOM(object):
         if lattice == "rect":
             size1 = min(munits, round(np.sqrt(munits / ratio)))
         else:
-            size1 = min(munits, round(np.sqrt(munits / ratio*np.sqrt(0.75))))
+            size1 = min(munits, round(np.sqrt(munits / ratio * np.sqrt(0.75))))
 
         size2 = round(munits / size1)
 
@@ -699,19 +698,16 @@ def _chunk_based_bmu_find(input_matrix, codebook, y2, nth=1):
     blen = min(50, dlen)
     i0 = 0
 
-    while i0+1 <= dlen:
+    while i0 + 1 <= dlen:
         low = i0
-        high = min(dlen, i0+blen)
-        i0 = i0+blen
-        ddata = input_matrix[low:high+1]
+        high = min(dlen, i0 + blen)
+        i0 = i0 + blen
+        ddata = input_matrix[low:high + 1]
         d = np.dot(codebook, ddata.T)
         d *= -2
         d += y2.reshape(nnodes, 1)
-        bmu[low:high+1, 0] = np.argpartition(d, nth, axis=0)[nth-1]
-        bmu[low:high+1, 1] = np.partition(d, nth, axis=0)[nth-1]
+        bmu[low:high + 1, 0] = np.argpartition(d, nth, axis=0)[nth - 1]
+        bmu[low:high + 1, 1] = np.partition(d, nth, axis=0)[nth - 1]
         del ddata
 
     return bmu
-
-
-

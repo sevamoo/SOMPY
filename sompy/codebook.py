@@ -18,8 +18,8 @@ def generate_hex_lattice(n_rows, n_columns):
     y_coord = []
     for i in range(n_rows):
         for j in range(n_columns):
-            x_coord.append(i*1.5)
-            y_coord.append(np.sqrt(2/3)*(2*j+(1+i)%2))
+            x_coord.append(i * 1.5)
+            y_coord.append(np.sqrt(2 / 3) * (2 * j + (1 + i) % 2))
     coordinates = np.column_stack([x_coord, y_coord])
     return coordinates
 
@@ -35,13 +35,13 @@ class Codebook(object):
         elif 1 == len(mapsize):
             _size = [1, mapsize[0]]
             print('input was considered as the numbers of nodes')
-            print('map size is [{dlen},{dlen}]'.format(dlen=int(mapsize[0]/2)))
+            print('map size is [{dlen},{dlen}]'.format(dlen=int(mapsize[0] / 2)))
         else:
             raise InvalidMapsizeError(
                 "Mapsize is expected to be a 2 element list or a single int")
 
         self.mapsize = _size
-        self.nnodes = mapsize[0]*mapsize[1]
+        self.nnodes = mapsize[0] * mapsize[1]
         self.matrix = np.asarray(self.mapsize)
         self.initialized = False
 
@@ -59,7 +59,7 @@ class Codebook(object):
         """
         mn = np.tile(np.min(data, axis=0), (self.nnodes, 1))
         mx = np.tile(np.max(data, axis=0), (self.nnodes, 1))
-        self.matrix = mn + (mx-mn)*(np.random.rand(self.nnodes, data.shape[1]))
+        self.matrix = mn + (mx - mn) * (np.random.rand(self.nnodes, data.shape[1]))
         self.initialized = True
 
     @timeit()
@@ -108,8 +108,8 @@ class Codebook(object):
 
         mx = np.max(coord, axis=0)
         mn = np.min(coord, axis=0)
-        coord = (coord - mn)/(mx-mn)
-        coord = (coord - .5)*2
+        coord = (coord - mn) / (mx - mn)
+        coord = (coord - .5) * 2
         me = np.mean(data, 0)
         data = (data - me)
         tmp_matrix = np.tile(me, (self.nnodes, 1))
@@ -122,11 +122,11 @@ class Codebook(object):
         eigvec = pca.components_
         eigval = pca.explained_variance_
         norms = np.sqrt(np.einsum('ij,ij->i', eigvec, eigvec))
-        eigvec = ((eigvec.T/norms)*eigval).T
+        eigvec = ((eigvec.T / norms) * eigval).T
 
         for j in range(self.nnodes):
             for i in range(eigvec.shape[0]):
-                tmp_matrix[j, :] = tmp_matrix[j, :] + coord[j, i]*eigvec[i, :]
+                tmp_matrix[j, :] = tmp_matrix[j, :] + coord[j, i] * eigvec[i, :]
 
         self.matrix = np.around(tmp_matrix, decimals=6)
         self.initialized = True
@@ -169,7 +169,7 @@ class Codebook(object):
         dist = None
 
         # bmu should be an integer between 0 to no_nodes
-        if 0 <= node_ind <= (rows*cols):
+        if 0 <= node_ind <= (rows * cols):
             node_col = int(node_ind % cols)
             node_row = int(node_ind / cols)
         else:
@@ -179,7 +179,7 @@ class Codebook(object):
         if rows > 0 and cols > 0:
             r = np.arange(0, rows, 1)[:, np.newaxis]
             c = np.arange(0, cols, 1)
-            dist2 = (r-node_row)**2 + (c-node_col)**2
+            dist2 = (r - node_row)**2 + (c - node_col)**2
 
             dist = dist2.ravel()
         else:

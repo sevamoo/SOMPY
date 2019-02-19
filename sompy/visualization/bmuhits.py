@@ -19,13 +19,13 @@ class BmuHitsView(MapView):
             c = cents[i] if hex else (cents[i, 1] + 0.5, cents[-(i + 1), 0] + 0.5)
             ax.annotate(txt, c, va="center", ha="center", size=fontsize)
 
-    def show(self, som, anotate=True, onlyzeros=False, labelsize=7, cmap="jet", logaritmic = False):
+    def show(self, som, anotate=True, onlyzeros=False, labelsize=7, cmap="jet", logaritmic=False):
         org_w = self.width
         org_h = self.height
         (self.width, self.height, indtoshow, no_row_in_plot, no_col_in_plot,
          axis_num) = self._calculate_figure_params(som, 1, 1)
-        self.width /=  (self.width/org_w) if self.width > self.height else (self.height/org_h)
-        self.height /=  (self.width / org_w) if self.width > self.height else (self.height / org_h)
+        self.width /= (self.width / org_w) if self.width > self.height else (self.height / org_h)
+        self.height /= (self.width / org_w) if self.width > self.height else (self.height / org_h)
 
         counts = Counter(som._bmu[0])
         counts = [counts.get(x, 0) for x in range(som.codebook.mapsize[0] * som.codebook.mapsize[1])]
