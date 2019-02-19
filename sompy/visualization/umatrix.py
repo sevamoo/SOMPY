@@ -66,7 +66,7 @@ class UMatrixView(MatplotView):
         self._fig.set_size_inches((1 - ratio) * 15, ratio * 15)
         plt.tight_layout()
         plt.subplots_adjust(hspace=.00, wspace=.000)
-        sel_points = list()
+        sel_points = []
 
         if blob:
             from skimage.color import rgb2gray
@@ -79,7 +79,7 @@ class UMatrixView(MatplotView):
             blobs = blob_log(image, max_sigma=5, num_sigma=4, threshold=.152)
             blobs[:, 2] = blobs[:, 2] * sqrt(2)
             pylab.imshow(umat, cmap=plt.cm.get_cmap('RdYlBu_r'), alpha=1)
-            sel_points = list()
+            sel_points = []
 
             for blob in blobs:
                 row, col, r = blob
