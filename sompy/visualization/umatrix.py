@@ -30,7 +30,7 @@ class UMatrixView(MatplotView):
         return Umatrix.reshape(som.codebook.mapsize)
 
     def show(self, som, distance2=1, row_normalized=False, show_data=True,
-             contooor=True, blob=False, labels=False):
+             contour=True, blob=False, labels=False):
         umat = self.build_u_matrix(som, distance=distance2,
                                    row_normalized=row_normalized)
         msz = som.codebook.mapsize
@@ -40,7 +40,7 @@ class UMatrixView(MatplotView):
         self._fig, ax = plt.subplots(1, 1)
         pylab.imshow(umat, cmap=plt.cm.get_cmap('RdYlBu_r'), alpha=1)
 
-        if contooor:
+        if contour:
             mn = np.min(umat.flatten())
             mx = np.max(umat.flatten())
             std = np.std(umat.flatten())
