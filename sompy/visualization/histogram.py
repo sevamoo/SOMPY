@@ -1,15 +1,15 @@
-from .view import MatplotView
-from matplotlib import pyplot as plt
-from matplotlib import cm
-from matplotlib.colors import LogNorm
 import numpy as np
+from matplotlib import cm, pyplot as plt
+from matplotlib.colors import LogNorm
+
+from .view import MatplotView
 
 
 class Hist2d(MatplotView):
 
     def _fill_hist(self, x, y, mapsize, data_coords, what='train'):
-        x = np.arange(.5, mapsize[1]+.5, 1)
-        y = np.arange(.5, mapsize[0]+.5, 1)
+        x = np.arange(.5, mapsize[1] + .5, 1)
+        y = np.arange(.5, mapsize[0] + .5, 1)
         X, Y = np.meshgrid(x, y)
 
         if what == 'train':
@@ -23,12 +23,12 @@ class Hist2d(MatplotView):
         else:
             a = plt.hist2d(x, y, bins=(mapsize[1], mapsize[0]), alpha=.0,
                            cmap=cm.jet, norm=LogNorm())
-            area = a[0].T*50
+            area = a[0].T * 50
             plt.scatter(data_coords[:, 1] + .5,
                         mapsize[0] - .5 - data_coords[:, 0],
                         s=area, alpha=0.9, c='None', marker='o', cmap='jet',
                         linewidths=3, edgecolor='r')
-            plt.scatter(data_coords[:, 1]+.5, mapsize[0]-.5-data_coords[:, 0],
+            plt.scatter(data_coords[:, 1] + .5, mapsize[0] - .5 - data_coords[:, 0],
                         s=area, alpha=0.2, c='b', marker='o', cmap='jet',
                         linewidths=3, edgecolor='r')
 
