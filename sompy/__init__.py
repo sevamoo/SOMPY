@@ -1,6 +1,7 @@
-from logging.config import dictConfig
 
+from logging.config import dictConfig
 import matplotlib
+
 #matplotlib.use('Agg')  # Use whatever backend is available
 
 dictConfig({
@@ -23,6 +24,8 @@ dictConfig({
         }
     }
 })
+
+
 
 from .sompy import SOMFactory
 from .visualization import *

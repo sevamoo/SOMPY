@@ -1,11 +1,9 @@
-from math import sqrt
-
-import numpy as np
-import pylab
-import scipy
-from matplotlib import pyplot as plt
-
 from .view import MatplotView
+from matplotlib import pyplot as plt
+from pylab import imshow, contour
+from math import sqrt
+import numpy as np
+import scipy
 
 
 class UMatrixView(MatplotView):
@@ -30,7 +28,7 @@ class UMatrixView(MatplotView):
         return Umatrix.reshape(som.codebook.mapsize)
 
     def show(self, som, distance2=1, row_normalized=False, show_data=True,
-             contour=True, blob=False, labels=False):
+             contooor=True, blob=False, labels=False):
         umat = self.build_u_matrix(som, distance=distance2,
                                    row_normalized=row_normalized)
         msz = som.codebook.mapsize
@@ -38,16 +36,16 @@ class UMatrixView(MatplotView):
         coord = som.bmu_ind_to_xy(proj)
 
         self._fig, ax = plt.subplots(1, 1)
-        pylab.imshow(umat, cmap=plt.cm.get_cmap('RdYlBu_r'), alpha=1)
+        imshow(umat, cmap=plt.cm.get_cmap('RdYlBu_r'), alpha=1)
 
-        if contour:
+        if contooor:
             mn = np.min(umat.flatten())
             mx = np.max(umat.flatten())
             std = np.std(umat.flatten())
             md = np.median(umat.flatten())
-            mx = md + 0 * std
-            pylab.contour(umat, np.linspace(mn, mx, 15), linewidths=0.7,
-                          cmap=plt.cm.get_cmap('Blues'))
+            mx = md + 0*std
+            contour(umat, np.linspace(mn, mx, 15), linewidths=0.7,
+                    cmap=plt.cm.get_cmap('Blues'))
 
         if show_data:
             plt.scatter(coord[:, 1], coord[:, 0], s=2, alpha=1., c='Gray',
@@ -62,11 +60,11 @@ class UMatrixView(MatplotView):
                              horizontalalignment='center',
                              verticalalignment='center')
 
-        ratio = float(msz[0]) / (msz[0] + msz[1])
-        self._fig.set_size_inches((1 - ratio) * 15, ratio * 15)
+        ratio = float(msz[0])/(msz[0]+msz[1])
+        self._fig.set_size_inches((1-ratio)*15, ratio*15)
         plt.tight_layout()
         plt.subplots_adjust(hspace=.00, wspace=.000)
-        sel_points = []
+        sel_points = list()
 
         if blob:
             from skimage.color import rgb2gray
@@ -78,8 +76,8 @@ class UMatrixView(MatplotView):
             # 'Laplacian of Gaussian'
             blobs = blob_log(image, max_sigma=5, num_sigma=4, threshold=.152)
             blobs[:, 2] = blobs[:, 2] * sqrt(2)
-            pylab.imshow(umat, cmap=plt.cm.get_cmap('RdYlBu_r'), alpha=1)
-            sel_points = []
+            imshow(umat, cmap=plt.cm.get_cmap('RdYlBu_r'), alpha=1)
+            sel_points = list()
 
             for blob in blobs:
                 row, col, r = blob
