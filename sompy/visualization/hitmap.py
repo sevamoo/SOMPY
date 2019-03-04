@@ -1,8 +1,10 @@
-import numpy as np
+from .view import MatplotView
+from sompy.visualization.plot_tools import plot_hex_map
 from matplotlib import pyplot as plt
+import numpy as np
 
 from .mapview import MapView
-from .plot_tools import plot_hex_map
+
 
 
 class HitMapView(MapView):
@@ -12,7 +14,7 @@ class HitMapView(MapView):
             if onlyzeros == True:
                 if txt > 0:
                     txt = ""
-            c = cents[i] if hex else (cents[i, 1] + 0.5, cents[-(i + 1), 0] + 0.5)
+            c = cents[i] if hex else (cents[i, 1], cents[-(i + 1), 0])
             ax.annotate(txt, c, va="center", ha="center", size=fontsize)
 
     def show(self, som, data=None, anotate=True, onlyzeros=False, labelsize=7, cmap="jet"):
@@ -42,15 +44,14 @@ class HitMapView(MapView):
                     self._set_labels(cents, ax, clusters[proj], onlyzeros, labelsize, hex=False)
 
             else:
-                cents = som.bmu_ind_to_xy(np.arange(0, msz[0] * msz[1]))
+                cents = som.bmu_ind_to_xy(np.arange(0, msz[0]*msz[1]))
                 if anotate:
                     # TODO: Fix position of the labels
                     self._set_labels(cents, ax, clusters, onlyzeros, labelsize, hex=False)
 
-            plt.imshow(clusters.reshape(msz[0], msz[1])[::], alpha=.5)
+            plt.imshow(np.flip(clusters.reshape(msz[0], msz[1])[::],axis=0), alpha=0.5)
 
         elif som.codebook.lattice == "hexa":
-            ax, cents = plot_hex_map(np.flip(clusters.reshape(msz[0], msz[1])[::], axis=1),
-                                     fig=self._fig, colormap=cmap, colorbar=False)
+            ax, cents = plot_hex_map(np.flip(clusters.reshape(msz[0], msz[1])[::], axis=0),  fig=self._fig, colormap=cmap, colorbar=False)
             if anotate:
-                self._set_labels(cents, ax, clusters, onlyzeros, labelsize, hex=True)
+                self._set_labels(cents, ax, reversed(clusters), onlyzeros, labelsize, hex=True)

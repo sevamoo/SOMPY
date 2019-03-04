@@ -1,7 +1,6 @@
-import inspect
-import sys
-
 import numpy as np
+import sys
+import inspect
 
 
 class NormalizerFactory(object):
@@ -38,12 +37,12 @@ class VarianceNormalizer(Normalizer):
     def normalize(self, data):
         me, st = self._mean_and_standard_dev(data)
         st[st == 0] = 1  # prevent: when sd = 0, normalized result = NaN
-        return (data - me) / st
+        return (data-me)/st
 
     def normalize_by(self, raw_data, data):
         me, st = self._mean_and_standard_dev(raw_data)
         st[st == 0] = 1  # prevent: when sd = 0, normalized result = NaN
-        return (data - me) / st
+        return (data-me)/st
 
     def denormalize_by(self, data_by, n_vect):
         me, st = self._mean_and_standard_dev(data_by)
