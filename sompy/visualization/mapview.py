@@ -12,7 +12,7 @@ class MapView(MatplotView):
     def _calculate_figure_params(self, som, which_dim, col_sz):
 
         # add this to avoid error when normalization is not used
-        if som._normalizer:
+        if hasattr(som, '_normalizer'):
             codebook = som._normalizer.denormalize_by(som.data_raw, som.codebook.matrix)
         else:
             codebook = som.codebook.matrix
