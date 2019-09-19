@@ -72,3 +72,22 @@ class HistDNormalizer(Normalizer):
 class HistCNormalizer(Normalizer):
 
     name = 'histc'
+
+''' Added for people who would like to perform clustering without normalization. It allows someone to normalize
+before applying SOM and to increase some weights to some variables. When applying No normalization, when performing
+som.cluster() it would present an error like: No denormalize defined in som'''
+class NoNormalizer(Normalizer):
+
+    name = 'None'
+
+    def normalize(self, data):
+       data=data
+       return data
+
+    def normalize_by(self, raw_data, data):
+       data=data
+       return data
+
+    def denormalize_by(self, data_by, n_vect):
+       n_vect = n_vect
+       return n_vect
