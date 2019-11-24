@@ -39,7 +39,7 @@ But I recommend you to go through the codes. There are several functionalities a
 There is no published paper about this library. However if possible, please cite the library as follows:
 
 ```
-@misc{moosavi2019sompy,
+@misc{moosavi2014sompy,
   title={SOMPY: A Python Library for Self Organizing Map (SOM)},
   author={Moosavi, V and Packmann, S and Vall{\'e}s, I},
   note={GitHub.[Online]. Available: https://github. com/sevamoo/SOMPY},
