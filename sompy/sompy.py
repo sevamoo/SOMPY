@@ -534,9 +534,9 @@ class SOM(object):
 
         return out.astype(int)
 
-    def cluster(self, n_clusters=8):
+    def cluster(self, n_clusters=8, random_state=0):
         import sklearn.cluster as clust
-        cl_labels = clust.KMeans(n_clusters=n_clusters).fit_predict(
+        cl_labels = clust.KMeans(n_clusters=n_clusters, random_state=random_state).fit_predict(
             self._normalizer.denormalize_by(self.data_raw,
                                             self.codebook.matrix))
         self.cluster_labels = cl_labels
