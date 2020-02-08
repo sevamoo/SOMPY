@@ -14,7 +14,7 @@ As much as possible, the structure of SOM is similar to `somtoolbox` in Matlab. 
 
 
 ### Dependencies:
-SOMPY has the following dependencies (tested only with Python 2.7x):
+SOMPY has the following dependencies:
 - numpy
 - scipy
 - scikit-learn
