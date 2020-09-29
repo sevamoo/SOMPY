@@ -5,7 +5,7 @@ except ImportError:
 
 setup(
     name="SOMPY",
-    version="1.1",
+    version="1.1.1",
     description="Self Organizing Maps Package",
     author="Vahid Moosavi and Sebastian Packmann",
     packages=find_packages(),
