@@ -14,12 +14,12 @@ class InvalidMapsizeError(Exception):
     pass
 
 def generate_hex_lattice(n_rows, n_columns):
-    x_coord = []
-    y_coord = []
+    w, h = np.sqrt(3), 2
+    x_coord, y_coord = [], []
     for i in range(n_rows):
         for j in range(n_columns):
-            x_coord.append(i*1.5)
-            y_coord.append(np.sqrt(2/3)*(2*j+(1+i)%2))
+            x_coord.append(((j + 1) * w) - ((i % 2) * (0.5 * w)))
+            y_coord.append((i * h * (3 / 4)) + (0.5 * h))
     coordinates = np.column_stack([x_coord, y_coord])
     return coordinates
 
