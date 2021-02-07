@@ -352,7 +352,8 @@ class SOM(object):
                 logging.info("nan quantization error, exit train\n")
                 
                 #sys.exit("quantization error=nan, exit train")
-            
+
+        bmu = self.find_bmu(data, njb=njob)
         bmu[1] = np.sqrt(bmu[1] + fixed_euclidean_x2)
         self._bmu = bmu
 
