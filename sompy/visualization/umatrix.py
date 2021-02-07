@@ -73,6 +73,8 @@ class UMatrixView(MapView):
         blobs[:, 2] = blobs[:, 2] * sqrt(2)
         if hex:
             blobs[:, :2] = rectxy_to_hexaxy(blobs[:, :2].astype(int), X, Y)
+        else:
+            blobs[:, :2] = np.flip(blobs[:, :2], axis=1)
         sel_points = list()
 
         for blob in blobs:
@@ -89,10 +91,10 @@ class UMatrixView(MapView):
             sel_points.append(sel_point[:, 0])
             if hex:
                 ax.set_xlim([-0.5, umat.shape[1]])
-                ax.set_ylim([0.6, -((umat.shape[0] - 1) * sqrt(3)/2 + 0.6)])
+                ax.set_ylim([-(((umat.shape[0] - 1) * sqrt(3)/2) + 1/sqrt(3)), 1/sqrt(3)])
             else:
                 ax.set_xlim([-0.5, umat.shape[1] - 0.5])
-                ax.set_ylim([-0.5, umat.shape[0] - 0.5])
+                ax.set_ylim([umat.shape[0] - 0.5, -0.5])
             
     
     def show(self, som, distance=1, row_normalized=False, show_data=False,
@@ -113,7 +115,7 @@ class UMatrixView(MapView):
             warn("For hexagonal lattice, distance < sqrt(3) produces a null U-matrix.")
         umat = self.build_u_matrix(som, distance=distance, row_normalized=row_normalized)
         msz = som.codebook.mapsize
-        proj = som.project_data(som.data_raw)
+        proj = som._bmu[0]
         coord = som.bmu_ind_to_xy(proj)[:, :2]
         sel_points = list()
 
