@@ -3,6 +3,7 @@ from collections import Counter
 import matplotlib
 import numpy as np
 from matplotlib import pyplot as plt
+from itertools import chain
 
 from .mapview import MapView
 
@@ -59,11 +60,12 @@ class BmuHitsView(MapView):
             ax.set_yticklabels([])
             ax.set_xticklabels([])
             plt.colorbar(pl)
-
             #plt.show()
         elif som.codebook.lattice == "hexa":
-            ax, cents = plot_hex_map(mp[::-1], colormap=cmap, fig=self._fig)
+            ax, cents = plot_hex_map(mp, colormap=cmap, fig=self._fig)
             if anotate:
-                self._set_labels(cents, ax, reversed(counts), onlyzeros, labelsize, hex=True)
+                reversedcounts = np.array(counts[::-1])
+                orderedcounts = list(chain.from_iterable(np.flip(reversedcounts.reshape(msz[0], msz[1])[::],axis=0)))
+                self._set_labels(cents, ax, orderedcounts, onlyzeros, labelsize, hex=True)
             #plt.show()
         #return ax, cents
