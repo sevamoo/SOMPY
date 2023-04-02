@@ -48,7 +48,7 @@ There is no published paper about this library. However if possible, please cite
 ```
 
 
-For more information, you can contact me via sevamoo@gmail.com or svm@arch.ethz.ch, but please report an issue first.
+For more information, you can contact me via sevamoo@gmail.com but please report an issue first.
 
 
 
