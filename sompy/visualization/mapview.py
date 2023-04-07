@@ -46,7 +46,7 @@ class MapView(MatplotView):
             indtoshow = np.asarray(which_dim).T
             sH, sV = 16, 16*ratio_fig*ratio_hitmap
 
-        no_row_in_plot = dim / col_sz + 1  # 6 is arbitrarily selected
+        no_row_in_plot = int(dim / col_sz + 1)  # 6 is arbitrarily selected
         if no_row_in_plot <= 1:
             no_col_in_plot = dim
         else:
